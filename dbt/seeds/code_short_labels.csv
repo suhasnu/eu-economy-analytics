@@ -1,0 +1,41 @@
+dimension,code,short_label
+age,TOTAL,All ages
+age,Y25-74,25-74
+age,Y_LT25,Under 25
+coicop18,FOOD,Food
+coicop18,IGD_NNRG,Non-energy goods
+coicop18,NRG,Energy
+coicop18,SERV,Services
+coicop18,TOTAL,All items
+coicop18,TOT_X_NRG_FOOD,Core
+indic,BS-CSMCI,Confidence indicator
+indic,BS-FS-LY,Finances last 12m
+indic,BS-FS-NY,Finances next 12m
+indic,BS-GES-NY,Economy next 12m
+indic,BS-MP-NY,Major purchases next 12m
+indic_bt,NETTUR,Turnover
+indic_bt,PRD,Production
+indic_bt,VOL_SLS,Volume
+nace_r2,B-D,Total industry
+nace_r2,C,Manufacturing
+nace_r2,G47,All retail
+nace_r2,G47_FOOD,Food
+nace_r2,G47_NFOOD_X_G473,Non-food
+nace_r2,G473,Fuel
+nace_r2,G4791,Online and mail order
+nace_r2,MIG_CAG,Capital goods
+nace_r2,MIG_COG,Consumer goods
+nace_r2,MIG_ING,Intermediate goods
+s_adj,CA,CA
+s_adj,NSA,NSA
+s_adj,SA,SA
+s_adj,SCA,SCA
+sex,F,Women
+sex,M,Men
+sex,T,Both sexes
+unit,BAL,Balance
+unit,I21,Index 2021=100
+unit,PC_ACT,% labour force
+unit,PCH_PRE,% m/m
+unit,PCH_SM,% y/y
+unit,RCH_A,% y/y

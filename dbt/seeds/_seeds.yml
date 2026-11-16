@@ -1,7 +1,7 @@
 version: 2
 seeds:
   - name: eurostat_code_labels
-    description: Code labels per dimension, generated from the raw JSON-stat by `python -m src.load.dbt_seeds`.
+    description: Code labels per dimension, observation flags under dimension "status"; generated from the raw JSON-stat by `python -m src.load.dbt_seeds`.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -11,6 +11,12 @@ seeds:
     columns:
       - name: dataset_name
         data_tests: [unique, not_null]
+  - name: code_short_labels
+    description: Hand-maintained. Short code labels for dim_series.short_label; every labelled code needs one.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [dimension, code]
   - name: unit_aggregation_rules
     description: Hand-maintained. How values of each unit may be combined, and why.
     columns:

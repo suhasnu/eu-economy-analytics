@@ -1,6 +1,7 @@
 """Generate dbt seeds from the config and the raw Eurostat responses.
 
-eurostat_code_labels.csv  dimension, code, label  (labels come only in the raw JSON-stat)
+eurostat_code_labels.csv  dimension, code, label  (labels come only in the raw JSON-stat;
+                          observation flags are listed under dimension "status")
 indicator_headlines.csv   one row per dataset naming its headline series in staging terms
 """
 
@@ -46,6 +47,9 @@ def code_labels(indicators: dict[str, dict], raw_dir: Path = RAW_DIR) -> list[tu
                 continue
             for code, label in payload["dimension"][dim]["category"].get("label", {}).items():
                 labels.setdefault((dim, code), label)
+        # Flag labels are not a dimension; each response lists only the flags it uses.
+        for code, label in payload.get("extension", {}).get("status", {}).get("label", {}).items():
+            labels.setdefault(("status", code), label)
     return sorted((d, c, label) for (d, c), label in labels.items())
 
 
@@ -58,6 +62,7 @@ def headlines(indicators: dict[str, dict], processed_dir: Path = PROCESSED_DIR) 
             "dataset_name": name,
             "indicator_code": entry["code"],
             "indicator_label": entry["label"],
+            "indicator_short_label": entry["short_label"],
             "headline_unit_code": head["unit"],
             "headline_adjustment_code": head.get("s_adj", DEFAULT_ADJUSTMENT),
             "headline_breakdown_code": "|".join(f"{d}={head[d]}" for d in dims),

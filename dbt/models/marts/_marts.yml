@@ -16,7 +16,7 @@ models:
       - name: geo_code
         data_tests: [unique, not_null]
       - name: is_aggregate
-        description: True for Eurostat multi-country aggregates (EA20, EA21, EU27_2020 ...).
+        description: True for Eurostat multi-country aggregates (EA21, EU27_2020 ...).
         data_tests: [not_null]
 
   - name: dim_series
@@ -27,7 +27,11 @@ models:
       - name: indicator_label
         data_tests: [not_null]
       - name: series_label
+        description: Every part spelled out, for tooltips.
         data_tests: [not_null]
+      - name: short_label
+        description: Indicator plus only the parts (breakdowns, unit, adjustment) that vary within the dataset, for slicers and legends.
+        data_tests: [unique, not_null]
       - name: is_headline
         data_tests: [not_null]
       - name: aggregation
@@ -64,6 +68,10 @@ models:
               arguments:
                 to: ref('dim_date')
                 field: date_key
+      - name: status
+        description: Eurostat observation flag; null when unflagged.
+      - name: status_label
+        description: What the flag means, e.g. provisional or break in time series.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

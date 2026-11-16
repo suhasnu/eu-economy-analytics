@@ -9,7 +9,6 @@ coicop18,SERV,Services (overall index excluding goods)
 coicop18,TOTAL,Total
 coicop18,TOT_X_NRG_FOOD,"Overall index excluding energy, food, alcohol and tobacco"
 geo,DE,Germany
-geo,EA20,Euro area – 20 countries (2023-2025)
 geo,EA21,Euro area – 21 countries (from 2026)
 geo,FR,France
 geo,IT,Italy
@@ -40,6 +39,12 @@ s_adj,SCA,Seasonally and calendar adjusted data
 sex,F,Females
 sex,M,Males
 sex,T,Total
+status,b,break in time series
+status,d,definition differs (see metadata)
+status,e,estimated
+status,i,value imputed by Eurostat or other receiving agencies
+status,p,provisional
+status,u,low reliability
 unit,BAL,Balance
 unit,I21,"Index, 2021=100"
 unit,PCH_PRE,Percentage change on previous period

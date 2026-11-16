@@ -15,7 +15,7 @@ from src.schemas.observations import ObservationSchema
 
 BASE_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data"
 CONFIG_PATH = Path("configs/indicators.yml")
-REQUIRED_KEYS = ("name", "code", "label", "filters", "headline")
+REQUIRED_KEYS = ("name", "code", "label", "short_label", "filters", "headline")
 ALWAYS_KEPT = ("geo", "time", "unit")
 
 Filters = dict[str, str | list[str]]

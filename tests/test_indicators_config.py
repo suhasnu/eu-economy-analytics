@@ -24,7 +24,7 @@ def test_entry_has_required_keys(name):
     entry = INDICATORS[name]
     for key in REQUIRED_KEYS:
         assert entry[key], f"{name}: {key} is empty"
-    assert {"DE", "FR", "IT", "NL", "PL", "EA20"} <= set(entry["filters"]["geo"])
+    assert {"DE", "FR", "IT", "NL", "PL", "EA21"} <= set(entry["filters"]["geo"])
 
 
 @pytest.mark.parametrize("name", INDICATORS)
@@ -56,6 +56,4 @@ def test_headline_selects_one_series_per_geo_and_time(parsed):
 def test_fixture_dimensions_match_config(parsed):
     entry, payload, _ = parsed
     problems = check_filters(payload, entry["filters"])
-    # Known gap: une_rt_m publishes the euro area only as EA21.
-    expected = ["geo: requested ['EA20'] not returned"] if entry["code"] == "une_rt_m" else []
-    assert problems == expected
+    assert problems == []

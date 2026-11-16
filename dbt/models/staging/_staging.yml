@@ -17,7 +17,7 @@ models:
       - name: breakdown_code
         data_tests: [not_null]
       - name: status
-        description: Eurostat observation flag (b break, d definition differs, u low reliability, p provisional ...); null when unflagged.
+        description: Eurostat observation flag; null when unflagged. Labels are in eurostat_code_labels under dimension status.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

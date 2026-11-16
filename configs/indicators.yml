@@ -1,16 +1,18 @@
 # Eurostat datasets to ingest. `filters` go straight into the API request;
-# `headline` picks the one series per geo and time used for reporting.
+# `headline` picks the one series per geo and time used for reporting;
+# `short_label` leads dim_series.short_label, for slicers and legends.
 # Codes were checked against the dissemination API on 2026-11-16.
 
-# EA20 is the requested benchmark, but the euro area became EA21 on 2026-01-01.
-# une_rt_m has no EA20 at all and ei_bsco_m stops EA20 at 2025-12, so both are
-# requested and EA21 is the aggregate that is present and current everywhere.
-geo: [DE, FR, IT, NL, PL, EA20, EA21]
+# EA21 is the only euro area benchmark. Eurostat back-calculates it at fixed
+# 21-country composition from the start of each dataset (checked 2026-11-16), so
+# it carries full history; EA20 stopped at 2025-12 and une_rt_m never had it.
+geo: [DE, FR, IT, NL, PL, EA21]
 
 indicators:
   - name: unemployment
     code: une_rt_m
     label: Unemployment rate, % of labour force
+    short_label: Unemployment
     filters:
       unit: [PC_ACT]
       s_adj: [SA, NSA]
@@ -23,6 +25,7 @@ indicators:
   - name: hicp
     code: prc_hicp_minr
     label: HICP, annual rate of change
+    short_label: HICP
     filters:
       unit: [RCH_A]
       coicop18: [TOTAL, TOT_X_NRG_FOOD, NRG, FOOD, IGD_NNRG, SERV]
@@ -31,6 +34,7 @@ indicators:
   - name: industrial_production
     code: sts_inpr_m
     label: Industrial production, volume index
+    short_label: Industrial production
     filters:
       indic_bt: [PRD]
       nace_r2: [B-D, C, MIG_ING, MIG_CAG, MIG_COG]
@@ -43,6 +47,7 @@ indicators:
   - name: retail_trade
     code: sts_trtu_m
     label: Retail trade, volume of sales and turnover
+    short_label: Retail trade
     filters:
       indic_bt: [VOL_SLS, NETTUR]
       nace_r2: [G47, G47_FOOD, G47_NFOOD_X_G473, G473, G4791]
@@ -53,6 +58,7 @@ indicators:
   - name: consumer_confidence
     code: ei_bsco_m
     label: Consumer confidence indicator, balance
+    short_label: Consumer confidence
     filters:
       indic: [BS-CSMCI, BS-FS-LY, BS-FS-NY, BS-GES-NY, BS-MP-NY]
       s_adj: [SA, NSA]

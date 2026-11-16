@@ -57,3 +57,18 @@ def test_schema_rejects_null_geo():
     )
     with pytest.raises(pandera.errors.SchemaError):
         ObservationSchema.validate(df)
+
+
+def test_code_labels_include_status_flags(tmp_path):
+    from src.load.dbt_seeds import code_labels
+
+    payload = {
+        "id": ["geo", "time"],
+        "dimension": {"geo": {"category": {"label": {"DE": "Germany"}}}, "time": {"category": {}}},
+        "extension": {"status": {"label": {"p": "provisional", "b": "break in time series"}}},
+    }
+    (tmp_path / "x_m_20260101T000000Z.json").write_text(json.dumps(payload), encoding="utf-8")
+    labels = code_labels({"x": {"code": "x_m"}}, raw_dir=tmp_path)
+    assert ("status", "b", "break in time series") in labels
+    assert ("status", "p", "provisional") in labels
+    assert ("geo", "DE", "Germany") in labels

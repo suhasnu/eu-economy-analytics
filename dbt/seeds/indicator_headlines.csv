@@ -1,6 +1,6 @@
-dataset_name,indicator_code,indicator_label,headline_unit_code,headline_adjustment_code,headline_breakdown_code
-unemployment,une_rt_m,"Unemployment rate, % of labour force",PC_ACT,SA,age=TOTAL|sex=T
-hicp,prc_hicp_minr,"HICP, annual rate of change",RCH_A,NSA,coicop18=TOTAL
-industrial_production,sts_inpr_m,"Industrial production, volume index",I21,SCA,nace_r2=B-D
-retail_trade,sts_trtu_m,"Retail trade, volume of sales and turnover",I21,SCA,indic_bt=VOL_SLS|nace_r2=G47
-consumer_confidence,ei_bsco_m,"Consumer confidence indicator, balance",BAL,SA,indic=BS-CSMCI
+dataset_name,indicator_code,indicator_label,indicator_short_label,headline_unit_code,headline_adjustment_code,headline_breakdown_code
+unemployment,une_rt_m,"Unemployment rate, % of labour force",Unemployment,PC_ACT,SA,age=TOTAL|sex=T
+hicp,prc_hicp_minr,"HICP, annual rate of change",HICP,RCH_A,NSA,coicop18=TOTAL
+industrial_production,sts_inpr_m,"Industrial production, volume index",Industrial production,I21,SCA,nace_r2=B-D
+retail_trade,sts_trtu_m,"Retail trade, volume of sales and turnover",Retail trade,I21,SCA,indic_bt=VOL_SLS|nace_r2=G47
+consumer_confidence,ei_bsco_m,"Consumer confidence indicator, balance",Consumer confidence,BAL,SA,indic=BS-CSMCI
