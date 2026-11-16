@@ -1,13 +1,19 @@
 version: 2
 models:
   - name: dim_date
-    description: One row per month, contiguous from the first to the last observation month.
+    description: >
+      One row per day, contiguous from 1 January of the earliest observation year
+      to 31 December of the latest, so Power BI can mark it as a date table.
     columns:
       - name: date_key
-        description: YYYYMM as an integer.
+        description: YYYYMMDD as an integer.
+        data_tests: [unique, not_null]
+      - name: full_date
         data_tests: [unique, not_null]
       - name: month_start_date
-        data_tests: [unique, not_null]
+        data_tests: [not_null]
+      - name: is_month_start
+        data_tests: [not_null]
 
   - name: dim_geo
     columns:

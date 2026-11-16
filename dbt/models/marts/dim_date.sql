@@ -1,30 +1,44 @@
-{# Contiguous month spine covering every observation month. #}
+{# Contiguous daily spine over whole calendar years, as Power BI needs to mark it as a date table. #}
 {% set bounds %}select min(period_date) as lo, max(period_date) as hi from {{ ref('stg_eurostat__observations') }}{% endset %}
 {% if execute %}
     {% set row = run_query(bounds).rows[0] %}
-    {% set lo, hi = row[0] | string, row[1] | string %}
+    {% set lo_year, hi_year = row[0].year, row[1].year %}
 {% else %}
-    {% set lo, hi = '1900-01-01', '1900-01-01' %}
+    {% set lo_year, hi_year = 1900, 1900 %}
 {% endif %}
 
-with months as (
+with days as (
+    {# end_date is exclusive, so 1 January of the following year ends the spine on 31 December. #}
     {{ dbt_utils.date_spine(
-        datepart='month',
-        start_date="cast('" ~ lo ~ "' as date)",
-        end_date=dbt.dateadd('month', 1, "cast('" ~ hi ~ "' as date)")
+        datepart='day',
+        start_date="cast('" ~ lo_year ~ "-01-01' as date)",
+        end_date="cast('" ~ (hi_year + 1) ~ "-01-01' as date)"
     ) }}
 ),
 
 typed as (
-    select cast(date_month as date) as month_start_date from months
+    select cast(date_day as date) as full_date from days
+),
+
+with_month as (
+    select
+        full_date,
+        cast({{ dbt.date_trunc('month', 'full_date') }} as date) as month_start_date
+    from typed
 )
 
 select
-    cast(extract(year from month_start_date) * 100 + extract(month from month_start_date) as integer) as date_key,
+    cast(
+        extract(year from full_date) * 10000
+        + extract(month from full_date) * 100
+        + extract(day from full_date)
+        as integer
+    ) as date_key,
+    full_date,
+    cast(extract(year from full_date) as integer) as year,
+    cast(extract(quarter from full_date) as integer) as quarter,
+    cast(extract(month from full_date) as integer) as month_number,
+    {{ month_name('full_date') }} as month_name,
     month_start_date,
-    cast(extract(year from month_start_date) as integer) as year,
-    cast(extract(quarter from month_start_date) as integer) as quarter,
-    cast(extract(month from month_start_date) as integer) as month_number,
-    {{ month_name('month_start_date') }} as month_name,
-    concat(cast(extract(year from month_start_date) as string), ' Q', cast(extract(quarter from month_start_date) as string)) as year_quarter
-from typed
+    full_date = month_start_date as is_month_start
+from with_month
