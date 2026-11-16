@@ -13,5 +13,8 @@ BigQuery with dbt, surfaced in Power BI and Excel.
 ## Layout
 src/ingest/    one module per source
 src/schemas/   Pandera schemas
+src/load/      BigQuery loader, local DuckDB mirror, dbt seed generator
+configs/       indicators.yml, the datasets to ingest
+dbt/           dbt project, staging and star schema marts
 tests/         pytest, fixtures under tests/fixtures
 data/          gitignored except data/sample

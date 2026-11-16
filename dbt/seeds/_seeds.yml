@@ -1,0 +1,18 @@
+version: 2
+seeds:
+  - name: eurostat_code_labels
+    description: Code labels per dimension, generated from the raw JSON-stat by `python -m src.load.dbt_seeds`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [dimension, code]
+  - name: indicator_headlines
+    description: Headline series per dataset, generated from configs/indicators.yml by `python -m src.load.dbt_seeds`.
+    columns:
+      - name: dataset_name
+        data_tests: [unique, not_null]
+  - name: unit_aggregation_rules
+    description: Hand-maintained. How values of each unit may be combined, and why.
+    columns:
+      - name: unit_code
+        data_tests: [unique, not_null]

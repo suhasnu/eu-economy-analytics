@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_eurostat__observations
+    description: All five datasets in one long table, one row per series, geo and month.
+    columns:
+      - name: dataset_name
+        data_tests: [not_null]
+      - name: geo_code
+        data_tests: [not_null]
+      - name: period_date
+        description: First day of the observation month.
+        data_tests: [not_null]
+      - name: unit_code
+        data_tests: [not_null]
+      - name: adjustment_code
+        data_tests: [not_null]
+      - name: breakdown_code
+        data_tests: [not_null]
+      - name: status
+        description: Eurostat observation flag (b break, d definition differs, u low reliability, p provisional ...); null when unflagged.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [dataset_name, unit_code, adjustment_code, breakdown_code, geo_code, period_date]

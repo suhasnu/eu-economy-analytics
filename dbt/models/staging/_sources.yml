@@ -1,0 +1,11 @@
+version: 2
+sources:
+  - name: eurostat_raw
+    description: Loaded by src/load/bigquery.py (or src/load/duckdb_local.py offline), one table per configured indicator.
+    schema: "{{ env_var('BQ_RAW_DATASET', 'raw') }}"
+    tables:
+      - name: raw_unemployment
+      - name: raw_hicp
+      - name: raw_industrial_production
+      - name: raw_retail_trade
+      - name: raw_consumer_confidence

@@ -4,3 +4,9 @@ pyarrow
 pandera
 pytest
 pyyaml
+google-cloud-bigquery
+dbt-core
+dbt-bigquery
+# local, offline dbt runs
+dbt-duckdb
+duckdb

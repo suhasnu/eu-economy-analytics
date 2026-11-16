@@ -1,0 +1,8 @@
+unit_code,unit_kind,aggregation,aggregation_description
+I21,index level,none,"Index level, 2021=100. Summing or averaging across countries, breakdowns or months has no economic meaning; use the published aggregate (EA21) or the published rates of change."
+PCH_PRE,rate of change,none,"Month-on-month % change. Rates neither add across countries nor chain by summing across months; recompute from index levels."
+PCH_SM,rate of change,none,"Year-on-year % change. Rates do not add across countries or months, and averaging them needs weights that are not in the model; use the published aggregate."
+RCH_A,rate of change,none,"HICP annual rate of change. Country rates combine only with HICP country weights, which are not loaded; use the published euro area aggregate."
+PC_ACT,ratio,none,"Unemployed as % of the labour force. Combining needs the unemployed and labour force counts, which are not loaded; use the published aggregate."
+BAL,survey balance,none,"Net balance of positive minus negative survey answers. The euro area figure is a weighted aggregate of national surveys; use the published aggregate rather than averaging countries."
+THS_PER,count,sum,"Thousand persons. Additive across countries and across non-overlapping breakdown categories, never across months, and never together with aggregates (EA, EU) or totals."

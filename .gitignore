@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 data/*
 !data/sample/
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/

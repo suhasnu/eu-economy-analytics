@@ -1,0 +1,18 @@
+# No secrets here. BigQuery uses Application Default Credentials
+# (gcloud auth application-default login, or GOOGLE_APPLICATION_CREDENTIALS).
+eu_economy:
+  target: "{{ env_var('DBT_TARGET', 'bigquery') }}"
+  outputs:
+    bigquery:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('BQ_PROJECT', 'BQ_PROJECT-not-set') }}"
+      dataset: "{{ env_var('BQ_DBT_DATASET', 'analytics') }}"
+      location: "{{ env_var('BQ_LOCATION', 'EU') }}"
+      threads: 4
+    # Offline mirror built by `python -m src.load.duckdb_local`; run dbt from dbt/.
+    local:
+      type: duckdb
+      path: ../data/local/warehouse.duckdb
+      schema: analytics
+      threads: 4

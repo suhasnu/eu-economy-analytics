@@ -1,0 +1,70 @@
+version: 2
+models:
+  - name: dim_date
+    description: One row per month, contiguous from the first to the last observation month.
+    columns:
+      - name: date_key
+        description: YYYYMM as an integer.
+        data_tests: [unique, not_null]
+      - name: month_start_date
+        data_tests: [unique, not_null]
+
+  - name: dim_geo
+    columns:
+      - name: geo_key
+        data_tests: [unique, not_null]
+      - name: geo_code
+        data_tests: [unique, not_null]
+      - name: is_aggregate
+        description: True for Eurostat multi-country aggregates (EA20, EA21, EU27_2020 ...).
+        data_tests: [not_null]
+
+  - name: dim_series
+    description: One row per indicator, unit, adjustment and breakdown.
+    columns:
+      - name: series_key
+        data_tests: [unique, not_null]
+      - name: indicator_label
+        data_tests: [not_null]
+      - name: series_label
+        data_tests: [not_null]
+      - name: is_headline
+        data_tests: [not_null]
+      - name: aggregation
+        description: How values may be combined across geos, breakdowns or months. none = do not sum or average.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [none, sum]
+      - name: aggregation_description
+        data_tests: [not_null]
+
+  - name: fct_observation
+    description: One row per series, geo and month.
+    columns:
+      - name: series_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_series')
+                field: series_key
+      - name: geo_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_geo')
+                field: geo_key
+      - name: date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series_key, geo_key, date_key]
