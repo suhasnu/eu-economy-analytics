@@ -1,0 +1,96 @@
+table dim_date
+	lineageTag: 9f5a8051-d938-4d97-933e-3e097a4af5dd
+	dataCategory: Time
+
+	column date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 333466f0-482a-46eb-ba5d-cdb77101229e
+		summarizeBy: none
+		sourceColumn: date_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column full_date
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: e6d82139-d666-4c29-85c1-bd60004c1119
+		summarizeBy: none
+		sourceColumn: full_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 9d7e7cb5-bde5-4b34-bdda-b84c4a0e3acd
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 83b2cbe3-bbcf-42a8-a315-1fc010a86bc3
+		summarizeBy: none
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_number
+		dataType: int64
+		formatString: 0
+		lineageTag: 02e2e4d8-bee6-42a0-b8a1-b67e5e3e8829
+		summarizeBy: none
+		sourceColumn: month_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: 55347618-282e-4457-ab3d-35cac19fc28d
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_start_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d7b50756-432d-49cc-930a-eeba573b9b69
+		summarizeBy: none
+		sourceColumn: month_start_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column is_month_start
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 3faf882c-8b22-48b6-9f23-282d4a3831e1
+		summarizeBy: none
+		sourceColumn: is_month_start
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    dim_date_Table = eu_economy_analytics_marts_Schema{[Name="dim_date",Kind="Table"]}[Data]
+				in
+				    dim_date_Table
+
+	annotation PBI_ResultType = Table
+

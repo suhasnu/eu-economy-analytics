@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "eu-economy"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "4fa6651b-da8e-4d90-ade3-b688ee85c1cd"
+  }
+}

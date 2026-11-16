@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "eu-economy"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "8d64e806-489d-4410-ab3f-09b907c8297a"
+  }
+}

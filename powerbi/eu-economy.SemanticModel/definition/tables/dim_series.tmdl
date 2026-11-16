@@ -1,0 +1,156 @@
+table dim_series
+	lineageTag: 924f5492-3594-45a2-afe8-c342c4d807e3
+
+	column series_key
+		dataType: string
+		isHidden
+		lineageTag: ee2cd4c8-1ab9-404f-be1d-7e1c1752602c
+		summarizeBy: none
+		sourceColumn: series_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_name
+		dataType: string
+		lineageTag: 1f5fa197-f35d-4387-a790-c73471beb1cd
+		summarizeBy: none
+		sourceColumn: dataset_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column indicator_code
+		dataType: string
+		lineageTag: e3e371af-0004-4a56-a95b-cc43363c5f2a
+		summarizeBy: none
+		sourceColumn: indicator_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column indicator_label
+		dataType: string
+		lineageTag: 3a8abfa2-6070-4004-bee2-52ec3bde4141
+		summarizeBy: none
+		sourceColumn: indicator_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_code
+		dataType: string
+		lineageTag: b8f85b22-2265-4a8c-bc5d-8f7d1177298c
+		summarizeBy: none
+		sourceColumn: unit_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_label
+		dataType: string
+		lineageTag: 35327696-68cb-4db4-9f5c-c6e674446b0d
+		summarizeBy: none
+		sourceColumn: unit_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_short_label
+		dataType: string
+		lineageTag: 5ac60c21-fac1-4822-95ac-065c3311c7fa
+		summarizeBy: none
+		sourceColumn: unit_short_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column adjustment_code
+		dataType: string
+		lineageTag: c566b5cf-00c1-4313-b960-b49bc415f82c
+		summarizeBy: none
+		sourceColumn: adjustment_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column adjustment_label
+		dataType: string
+		lineageTag: f7cd42f7-5eb1-406f-afd1-0f91e30060ae
+		summarizeBy: none
+		sourceColumn: adjustment_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column breakdown_code
+		dataType: string
+		lineageTag: b8e2e83a-b48c-4ae5-9442-ed05985a1b57
+		summarizeBy: none
+		sourceColumn: breakdown_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column breakdown_label
+		dataType: string
+		lineageTag: 10574bc1-62e4-474d-9262-fac0b4d229af
+		summarizeBy: none
+		sourceColumn: breakdown_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column series_label
+		dataType: string
+		lineageTag: 27dd2e1f-aa32-4c91-9e3f-52f55bebdbe5
+		summarizeBy: none
+		sourceColumn: series_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column short_label
+		dataType: string
+		lineageTag: c067af27-04ef-486f-b0f3-6b7c7021ec55
+		summarizeBy: none
+		sourceColumn: short_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_headline
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: f1100ab8-07fd-433a-bc79-2c3c2d695f18
+		summarizeBy: none
+		sourceColumn: is_headline
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_kind
+		dataType: string
+		lineageTag: 0b3e61d2-d85e-41b8-83d1-3fe2746b7306
+		summarizeBy: none
+		sourceColumn: unit_kind
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation
+		dataType: string
+		lineageTag: ff5d70c0-b8b4-424d-be85-297cd6992d43
+		summarizeBy: none
+		sourceColumn: aggregation
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation_description
+		dataType: string
+		lineageTag: cb1b407b-a096-4475-bf86-ea97474dcd0b
+		summarizeBy: none
+		sourceColumn: aggregation_description
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_series = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    dim_series_Table = eu_economy_analytics_marts_Schema{[Name="dim_series",Kind="Table"]}[Data]
+				in
+				    dim_series_Table
+
+	annotation PBI_ResultType = Table
+

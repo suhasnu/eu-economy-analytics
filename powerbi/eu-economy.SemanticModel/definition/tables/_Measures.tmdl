@@ -1,0 +1,31 @@
+table _Measures
+	lineageTag: 772c9862-ff0a-40e0-b7bf-64796b3e2a37
+
+	/// Observation value when exactly one fact row is in scope, otherwise blank.
+	measure Value =
+			IF (
+			    COUNTROWS ( fct_observation ) = 1,
+			    SELECTEDVALUE ( fct_observation[value] )
+			)
+		formatString: #,0.0
+		lineageTag: f48beb88-3bbb-47ac-b59d-5e2e1161641e
+
+	/// Value for the same period one year earlier.
+	measure 'Value PY' =
+			CALCULATE (
+			    [Value],
+			    SAMEPERIODLASTYEAR ( dim_date[full_date] )
+			)
+		formatString: #,0.0
+		lineageTag: 34a2c078-69a0-49d3-8f85-e8409b05fe6f
+
+	column _
+		isHidden
+		lineageTag: abba6b1d-b759-4223-bff1-d89abe307e8e
+		isNameInferred
+		sourceColumn: [_]
+
+	partition _Measures = calculated
+		mode: import
+		source = ROW("_", BLANK())
+

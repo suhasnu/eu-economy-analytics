@@ -1,0 +1,12 @@
+relationship AutoDetected_58803e92-2755-4e6b-8ab1-557f26df553f
+	fromColumn: fct_observation.date_key
+	toColumn: dim_date.date_key
+
+relationship AutoDetected_8bd2944d-43e0-4afe-9668-8b02a3a3ec52
+	fromColumn: fct_observation.geo_key
+	toColumn: dim_geo.geo_key
+
+relationship AutoDetected_e98c0ede-bd19-44a7-aa59-85802b6020f4
+	fromColumn: fct_observation.series_key
+	toColumn: dim_series.series_key
+

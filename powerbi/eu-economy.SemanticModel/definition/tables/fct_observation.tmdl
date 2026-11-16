@@ -1,0 +1,76 @@
+table fct_observation
+	lineageTag: a9b1a744-b898-4a90-8c2b-dd98f8470944
+
+	column series_key
+		dataType: string
+		isHidden
+		lineageTag: 9907a2d9-0c70-46fd-b892-1a6514ad06e2
+		summarizeBy: none
+		sourceColumn: series_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_key
+		dataType: string
+		isHidden
+		lineageTag: bc68e25f-5516-4f56-9f9f-b3083ac2b45d
+		summarizeBy: none
+		sourceColumn: geo_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8687cd5f-2795-46de-aecc-3ee603f8d343
+		summarizeBy: none
+		sourceColumn: date_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: double
+		lineageTag: 20aee585-2823-4af1-b360-31a2d8b71253
+		summarizeBy: sum
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column status
+		dataType: string
+		lineageTag: 1ae03c1e-9908-4229-9800-7a971bead5bd
+		summarizeBy: none
+		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
+	column status_label
+		dataType: string
+		lineageTag: 5fa006be-6424-408d-bb0c-08422646b0b3
+		summarizeBy: none
+		sourceColumn: status_label
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_observation = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    fct_observation_Table = eu_economy_analytics_marts_Schema{[Name="fct_observation",Kind="Table"]}[Data]
+				in
+				    fct_observation_Table
+
+	annotation PBI_ResultType = Table
+
