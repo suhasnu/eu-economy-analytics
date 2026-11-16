@@ -3,3 +3,4 @@ pandas
 pyarrow
 pandera
 pytest
+pyyaml

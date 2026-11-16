@@ -1,0 +1,60 @@
+# Eurostat datasets to ingest. `filters` go straight into the API request;
+# `headline` picks the one series per geo and time used for reporting.
+# Codes were checked against the dissemination API on 2026-11-16.
+
+# EA20 is the requested benchmark, but the euro area became EA21 on 2026-01-01.
+# une_rt_m has no EA20 at all and ei_bsco_m stops EA20 at 2025-12, so both are
+# requested and EA21 is the aggregate that is present and current everywhere.
+geo: [DE, FR, IT, NL, PL, EA20, EA21]
+
+indicators:
+  - name: unemployment
+    code: une_rt_m
+    label: Unemployment rate, % of labour force
+    filters:
+      unit: [PC_ACT]
+      s_adj: [SA, NSA]
+      age: [TOTAL, Y_LT25, Y25-74]
+      sex: [T, M, F]
+    headline: {unit: PC_ACT, s_adj: SA, age: TOTAL, sex: T}
+
+  # prc_hicp_manr is frozen at 2025-12 (COICOP 1999). Its successor under
+  # ECOICOP ver.2 is prc_hicp_minr, where the dimension is coicop18.
+  - name: hicp
+    code: prc_hicp_minr
+    label: HICP, annual rate of change
+    filters:
+      unit: [RCH_A]
+      coicop18: [TOTAL, TOT_X_NRG_FOOD, NRG, FOOD, IGD_NNRG, SERV]
+    headline: {unit: RCH_A, coicop18: TOTAL}
+
+  - name: industrial_production
+    code: sts_inpr_m
+    label: Industrial production, volume index
+    filters:
+      indic_bt: [PRD]
+      nace_r2: [B-D, C, MIG_ING, MIG_CAG, MIG_COG]
+      s_adj: [SCA, CA]
+      unit: [I21, PCH_PRE, PCH_SM]
+    headline: {indic_bt: PRD, nace_r2: B-D, s_adj: SCA, unit: I21}
+
+  # Headline is volume of sales (deflated), the measure Eurostat leads with;
+  # nominal net turnover is kept alongside.
+  - name: retail_trade
+    code: sts_trtu_m
+    label: Retail trade, volume of sales and turnover
+    filters:
+      indic_bt: [VOL_SLS, NETTUR]
+      nace_r2: [G47, G47_FOOD, G47_NFOOD_X_G473, G473, G4791]
+      s_adj: [SCA, CA]
+      unit: [I21, PCH_PRE, PCH_SM]
+    headline: {indic_bt: VOL_SLS, nace_r2: G47, s_adj: SCA, unit: I21}
+
+  - name: consumer_confidence
+    code: ei_bsco_m
+    label: Consumer confidence indicator, balance
+    filters:
+      indic: [BS-CSMCI, BS-FS-LY, BS-FS-NY, BS-GES-NY, BS-MP-NY]
+      s_adj: [SA, NSA]
+      unit: [BAL]
+    headline: {indic: BS-CSMCI, s_adj: SA, unit: BAL}
