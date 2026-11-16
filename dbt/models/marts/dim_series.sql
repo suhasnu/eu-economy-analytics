@@ -78,6 +78,7 @@ select
     s.indicator_label,
     s.unit_code,
     s.unit_label,
+    s.unit_short as unit_short_label,
     s.adjustment_code,
     s.adjustment_label,
     s.breakdown_code,
