@@ -1,0 +1,133 @@
+{
+  "name": "EU Economy",
+  "dataColors": [
+    "#0072B2",
+    "#D55E00",
+    "#009E73",
+    "#7B52AB",
+    "#E69F00",
+    "#56B4E9",
+    "#B23A6F",
+    "#3F6F52"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#1B2733",
+  "tableAccent": "#0072B2",
+  "good": "#009E73",
+  "neutral": "#6B7785",
+  "bad": "#C0392B",
+  "maximum": "#0072B2",
+  "center": "#C9D3DC",
+  "minimum": "#F2F5F7",
+  "textClasses": {
+    "callout": {
+      "fontFace": "Segoe UI Light",
+      "fontSize": 32,
+      "color": "#1B2733"
+    },
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 13,
+      "color": "#1B2733"
+    },
+    "header": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 11,
+      "color": "#1B2733"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#4A5568"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#FFFFFF" } },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#E6E9EC" } },
+            "radius": 6
+          }
+        ],
+        "dropShadow": [{ "show": false }],
+        "visualHeader": [{ "show": false }],
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#1B2733" } },
+            "fontSize": 13,
+            "fontFamily": "Segoe UI Semibold",
+            "alignment": "left",
+            "background": { "solid": { "color": "#FFFFFF" } }
+          }
+        ],
+        "categoryAxis": [
+          {
+            "show": true,
+            "gridlineShow": false,
+            "labelColor": { "solid": { "color": "#6B7785" } },
+            "fontSize": 10,
+            "showAxisTitle": false,
+            "lineColor": { "solid": { "color": "#D7DCE1" } }
+          }
+        ],
+        "valueAxis": [
+          {
+            "show": true,
+            "gridlineShow": true,
+            "gridlineColor": { "solid": { "color": "#EDF0F3" } },
+            "gridlineThickness": 1,
+            "gridlineStyle": "solid",
+            "labelColor": { "solid": { "color": "#6B7785" } },
+            "fontSize": 10,
+            "showAxisTitle": false
+          }
+        ],
+        "legend": [
+          {
+            "show": true,
+            "position": "TopLeft",
+            "showTitle": false,
+            "labelColor": { "solid": { "color": "#4A5568" } },
+            "fontSize": 10
+          }
+        ],
+        "labels": [
+          {
+            "show": false,
+            "color": { "solid": { "color": "#4A5568" } },
+            "fontSize": 9
+          }
+        ]
+      },
+      "lineChart": {
+        "lineStyles": [{ "strokeWidth": 2, "lineStyle": "solid" }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#F6F7F9" } },
+            "transparency": 0
+          }
+        ],
+        "outspace": [
+          {
+            "color": { "solid": { "color": "#F6F7F9" } },
+            "transparency": 0
+          }
+        ]
+      }
+    }
+  }
+}
