@@ -19,6 +19,70 @@ table _Measures
 		formatString: #,0.0
 		lineageTag: 34a2c078-69a0-49d3-8f85-e8409b05fe6f
 
+	/// Most recent date holding an observation, ignoring any date filter.
+	measure 'Latest Date' =
+			CALCULATE (
+			    MAXX (
+			        FILTER ( fct_observation, NOT ISBLANK ( fct_observation[value] ) ),
+			        RELATED ( dim_date[full_date] )
+			    ),
+			    REMOVEFILTERS ( dim_date )
+			)
+		lineageTag: b92033ea-51be-46c9-ab97-2a7e23160b7e
+
+	/// Value at the latest month that has data.
+	measure 'Latest Value' =
+			VAR LatestDate = [Latest Date]
+			RETURN
+			    CALCULATE ( [Value], REMOVEFILTERS ( dim_date ), dim_date[full_date] = LatestDate )
+		formatString: #,0.0
+		lineageTag: 9eb58255-f92c-4bfe-a3db-360ad0781e13
+
+	/// The latest month as text, for example Sep 2026.
+	measure 'Latest Month' =
+			VAR LatestDate = [Latest Date]
+			RETURN
+			    IF ( NOT ISBLANK ( LatestDate ), FORMAT ( LatestDate, "MMM yyyy", "en-US" ) )
+		lineageTag: a0c4f536-8d03-4cf4-bfd6-a358f9bec292
+
+	/// Change on a year earlier: percent for index series, points for rates.
+	measure 'Latest Change' =
+			VAR LatestDate = [Latest Date]
+			VAR ValueNow = [Latest Value]
+			VAR ValueThen =
+			    CALCULATE ( [Value], REMOVEFILTERS ( dim_date ), dim_date[full_date] = EDATE ( LatestDate, -12 ) )
+			VAR IsIndex = SELECTEDVALUE ( dim_series[unit_code] ) = "I21"
+			RETURN
+			    IF (
+			        NOT ISBLANK ( ValueNow ) && NOT ISBLANK ( ValueThen ),
+			        IF ( IsIndex, ( DIVIDE ( ValueNow, ValueThen ) - 1 ) * 100, ValueNow - ValueThen )
+			    )
+		lineageTag: 01d82b26-f8b5-4756-ad3d-0221d541d251
+
+	/// Signed change with its unit, for the cards.
+	measure 'Latest Change Label' =
+			VAR Chg = [Latest Change]
+			VAR IsIndex = SELECTEDVALUE ( dim_series[unit_code] ) = "I21"
+			RETURN
+			    IF (
+			        NOT ISBLANK ( Chg ),
+			        FORMAT ( Chg, "+0.0;-0.0;0.0", "en-US" )
+			            & IF ( IsIndex, "% vs a year earlier", " pp vs a year earlier" )
+			    )
+		lineageTag: e67dd78b-f51c-4564-9a43-2b49e8600ee1
+
+	/// Year on year change in the current filter context, unit aware.
+	measure 'Change vs PY' =
+			VAR ValueNow = [Value]
+			VAR ValuePY = [Value PY]
+			VAR IsIndex = SELECTEDVALUE ( dim_series[unit_code] ) = "I21"
+			RETURN
+			    IF (
+			        NOT ISBLANK ( ValueNow ) && NOT ISBLANK ( ValuePY ),
+			        IF ( IsIndex, ( DIVIDE ( ValueNow, ValuePY ) - 1 ) * 100, ValueNow - ValuePY )
+			    )
+		lineageTag: 13da94ef-73af-436d-a78c-a1ada64748b1
+
 	column _
 		isHidden
 		lineageTag: abba6b1d-b759-4223-bff1-d89abe307e8e

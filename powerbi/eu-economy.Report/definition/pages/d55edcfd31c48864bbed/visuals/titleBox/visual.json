@@ -5,8 +5,8 @@
     "x": 16,
     "y": 16,
     "z": 0,
+    "height": 68,
     "width": 560,
-    "height": 56,
     "tabOrder": 0
   },
   "visual": {
@@ -21,8 +21,7 @@
                   {
                     "value": "German economy monitor",
                     "textStyle": {
-                      "fontSize": "20pt",
-                      "fontWeight": "600"
+                      "fontSize": "18pt"
                     }
                   }
                 ]
@@ -32,8 +31,8 @@
                   {
                     "value": "Five monthly Eurostat indicators, Germany in European context",
                     "textStyle": {
-                      "fontSize": "10pt",
-                      "color": "#6B7785"
+                      "fontSize": "9pt",
+                      "color": "#6b7785"
                     }
                   }
                 ]
