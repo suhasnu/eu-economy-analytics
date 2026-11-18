@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
   "name": "d55edcfd31c48864bbed",
   "displayName": "Overview",
-  "displayOption": "FitToPage",
+  "displayOption": "FitToWidth",
   "height": 720,
   "width": 1280,
   "filterConfig": {
@@ -92,6 +92,56 @@
     {
       "source": "indicatorSlicer",
       "target": "cardConfidence",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "cardConfidence",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "cardIndustry",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "cardInflation",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "cardRetail",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "cardUnemployment",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "countrySlicer",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "indicatorSlicer",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "lineChart",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "monthTable",
+      "type": "NoFilter"
+    },
+    {
+      "source": "barChart",
+      "target": "titleBox",
       "type": "NoFilter"
     }
   ]

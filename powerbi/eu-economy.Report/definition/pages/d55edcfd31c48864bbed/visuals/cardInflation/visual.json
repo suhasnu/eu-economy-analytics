@@ -6,7 +6,7 @@
     "y": 100,
     "z": 1000,
     "width": 240,
-    "height": 112,
+    "height": 128,
     "tabOrder": 4268
   },
   "visual": {
@@ -83,7 +83,22 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "categoryLabels": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   },
   "filterConfig": {
     "filters": [
