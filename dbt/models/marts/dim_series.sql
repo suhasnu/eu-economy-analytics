@@ -1,6 +1,7 @@
 {# breakdown_code is 'dim=code|dim=code'; no dataset has more than two breakdown dims.
    A part dropped here would make short labels collide, which the unique test catches. #}
 {% set n_parts = 2 %}
+{% set dims = breakdown_dimensions() %}
 
 with series as (
     select distinct
@@ -23,6 +24,20 @@ parts as (
     from series as s
 ),
 
+-- One code column per dimension, wherever in breakdown_code that dimension sits.
+split as (
+    select
+        p.*
+        {%- for d in dims %},
+        case
+            {%- for i in range(1, n_parts + 1) %}
+            when p.part_{{ i }}_dimension = '{{ d }}' then p.part_{{ i }}_code
+            {%- endfor %}
+        end as {{ d }}_code
+        {%- endfor %}
+    from parts as p
+),
+
 -- A part belongs in the short label only if it takes more than one value within the dataset.
 varying as (
     select
@@ -32,7 +47,7 @@ varying as (
         {%- for i in range(1, n_parts + 1) %},
         count(distinct part_{{ i }}_code) > 1 as part_{{ i }}_varies
         {%- endfor %}
-    from parts
+    from split
     group by dataset_name
 ),
 
@@ -51,12 +66,15 @@ labelled as (
         {%- for i in range(1, n_parts + 1) %}
         coalesce(p{{ i }}_s.short_label, p{{ i }}_l.label, p.part_{{ i }}_code) as part_{{ i }}_short,
         {%- endfor %}
+        {%- for d in dims %}
+        {{ label_or_code(d ~ '_l', 'p.' ~ d ~ '_code') }} as {{ d }}_label,
+        {%- endfor %}
         v.unit_varies,
         v.adjustment_varies
         {%- for i in range(1, n_parts + 1) %},
         v.part_{{ i }}_varies
         {%- endfor %}
-    from parts as p
+    from split as p
     left join {{ ref('indicator_headlines') }} as h on h.dataset_name = p.dataset_name
     left join varying as v on v.dataset_name = p.dataset_name
     {{ join_label('unit', 'p.unit_code', 'unit_l') }}
@@ -68,6 +86,9 @@ labelled as (
         on p{{ i }}_l.dimension = p.part_{{ i }}_dimension and p{{ i }}_l.code = p.part_{{ i }}_code
     left join {{ ref('code_short_labels') }} as p{{ i }}_s
         on p{{ i }}_s.dimension = p.part_{{ i }}_dimension and p{{ i }}_s.code = p.part_{{ i }}_code
+    {%- endfor %}
+    {%- for d in dims %}
+    {{ join_label(d, 'p.' ~ d ~ '_code', d ~ '_l') }}
     {%- endfor %}
 )
 
@@ -83,6 +104,10 @@ select
     s.adjustment_label,
     s.breakdown_code,
     s.breakdown_label,
+    {%- for d in dims %}
+    s.{{ d }}_code,
+    s.{{ d }}_label,
+    {%- endfor %}
     concat(
         s.indicator_label, ' | ', s.breakdown_label, ' | ',
         s.unit_label, ' | ', s.adjustment_label

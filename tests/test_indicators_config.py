@@ -57,3 +57,12 @@ def test_fixture_dimensions_match_config(parsed):
     entry, payload, _ = parsed
     problems = check_filters(payload, entry["filters"])
     assert problems == []
+
+
+def test_requested_dimensions_exclude_non_breakdown_columns():
+    from src.load.dbt_seeds import requested_dimensions
+
+    dims = requested_dimensions(INDICATORS)
+    assert not {d for _, d in dims} & {"geo", "unit", "s_adj"}
+    assert ("industrial_production", "indic_bt") in dims  # requested though dropped as constant
+    assert {n for n, _ in dims} == set(INDICATORS)

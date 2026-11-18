@@ -35,6 +35,26 @@ models:
       - name: unit_short_label
         description: Short unit for axes and tooltips (e.g. "% y/y"); falls back to the full label, then the code.
         data_tests: [not_null]
+      - name: breakdown_code
+        description: All breakdown dimensions packed as dim=code|dim=code, alphabetical. Kept for existing visuals; the split columns below agree with it.
+      - name: age_code
+        description: Age group. Null where the dataset does not break down by age.
+      - name: age_label
+      - name: sex_code
+        description: Sex. Null where the dataset does not break down by sex.
+      - name: sex_label
+      - name: coicop18_code
+        description: HICP item (ECOICOP ver.2). Null where the dataset does not break down by coicop18.
+      - name: coicop18_label
+      - name: nace_r2_code
+        description: Economic activity (NACE Rev.2). Null where the dataset does not break down by nace_r2.
+      - name: nace_r2_label
+      - name: indic_code
+        description: Business and consumer survey question. Null where the dataset does not break down by indic.
+      - name: indic_label
+      - name: indic_bt_code
+        description: Short-term business statistic (production, sales volume, turnover). Null where the dataset does not break down by indic_bt.
+      - name: indic_bt_label
       - name: series_label
         description: Every part spelled out, for tooltips.
         data_tests: [not_null]

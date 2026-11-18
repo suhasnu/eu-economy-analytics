@@ -14,3 +14,6 @@ left join {{ ref('eurostat_code_labels') }} as {{ alias }}
 left join {{ ref('code_short_labels') }} as {{ alias }}
   on {{ alias }}.dimension = '{{ dimension }}' and {{ alias }}.code = {{ code_col }}
 {% endmacro %}
+
+{# Breakdown dimensions dim_series splits out of breakdown_code, in column order. #}
+{% macro breakdown_dimensions() %}{{ return(['age', 'sex', 'coicop18', 'nace_r2', 'indic', 'indic_bt']) }}{% endmacro %}

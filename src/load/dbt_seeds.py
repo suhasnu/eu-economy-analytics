@@ -3,6 +3,7 @@
 eurostat_code_labels.csv  dimension, code, label  (labels come only in the raw JSON-stat;
                           observation flags are listed under dimension "status")
 indicator_headlines.csv   one row per dataset naming its headline series in staging terms
+indicator_dimensions.csv  dataset_name, dimension: the breakdown dimensions the config requests
 """
 
 from __future__ import annotations
@@ -70,6 +71,17 @@ def headlines(indicators: dict[str, dict], processed_dir: Path = PROCESSED_DIR) 
     return rows
 
 
+def requested_dimensions(indicators: dict[str, dict]) -> list[tuple[str, str]]:
+    # From the config, not the parquet: the parser drops a dimension filtered to one code,
+    # so the parquet under-reports what was requested.
+    return sorted(
+        (name, dim)
+        for name, entry in indicators.items()
+        for dim in entry["filters"]
+        if dim not in NON_BREAKDOWN
+    )
+
+
 def main() -> None:
     indicators = load_indicators()
     SEED_DIR.mkdir(parents=True, exist_ok=True)
@@ -82,7 +94,11 @@ def main() -> None:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
-    print(f"wrote {SEED_DIR}/eurostat_code_labels.csv and {SEED_DIR}/indicator_headlines.csv")
+    with (SEED_DIR / "indicator_dimensions.csv").open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["dataset_name", "dimension"])
+        w.writerows(requested_dimensions(indicators))
+    print(f"wrote eurostat_code_labels.csv, indicator_headlines.csv and indicator_dimensions.csv to {SEED_DIR}")
 
 
 if __name__ == "__main__":

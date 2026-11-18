@@ -1,0 +1,9 @@
+dataset_name,dimension
+consumer_confidence,indic
+hicp,coicop18
+industrial_production,indic_bt
+industrial_production,nace_r2
+retail_trade,indic_bt
+retail_trade,nace_r2
+unemployment,age
+unemployment,sex
