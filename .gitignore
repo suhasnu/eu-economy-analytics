@@ -6,3 +6,8 @@ data/*
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/
+
+# Power BI project: local caches and machine-specific settings
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+*.pbix
