@@ -90,6 +90,46 @@ labelled as (
     {%- for d in dims %}
     {{ join_label(d, 'p.' ~ d ~ '_code', d ~ '_l') }}
     {%- endfor %}
+),
+
+{%- set compare = series_dimensions() %}
+
+headline_codes as (
+    select
+        dataset_name
+        {%- for name, col in compare %},
+        {{ col }}
+        {%- endfor %}
+    from labelled
+    where unit_code = headline_unit_code
+        and adjustment_code = headline_adjustment_code
+        and breakdown_code = headline_breakdown_code
+),
+
+diffs as (
+    select
+        l.*
+        {%- for name, col in compare %},
+        l.{{ col }} is distinct from hc.{{ col }} as differs_{{ name }}
+        {%- endfor %}
+    from labelled as l
+    left join headline_codes as hc on hc.dataset_name = l.dataset_name
+),
+
+compared as (
+    select
+        d.*,
+        case
+            {%- for name, col in compare %}{{ ' +' if not loop.first }} case when d.differs_{{ name }} then 1 else 0 end
+            {%- endfor %}
+            when 0 then 'headline'
+            when 1 then case
+                {%- for name, col in compare %}
+                when d.differs_{{ name }} then '{{ name }}'
+                {%- endfor %}
+            end
+        end as varies_in
+    from diffs as d
 )
 
 select
@@ -128,6 +168,9 @@ select
     ) as is_headline,
     r.unit_kind,
     r.aggregation,
-    r.aggregation_description
-from labelled as s
+    r.aggregation_description,
+    s.varies_in,
+    case when s.varies_in = 'headline' then 'Headline' else vl.label end as varies_in_label
+from compared as s
 left join {{ ref('unit_aggregation_rules') }} as r on r.unit_code = s.unit_code
+left join {{ ref('dimension_labels') }} as vl on vl.dimension = s.varies_in

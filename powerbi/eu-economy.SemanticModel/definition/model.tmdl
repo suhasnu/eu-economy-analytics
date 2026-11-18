@@ -17,6 +17,7 @@ ref table dim_geo
 ref table dim_series
 ref table fct_observation
 ref table _Measures
+ref table Parameter
 
 ref cultureInfo de-DE
 

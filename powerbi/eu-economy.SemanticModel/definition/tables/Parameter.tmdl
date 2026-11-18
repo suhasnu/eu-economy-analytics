@@ -1,0 +1,52 @@
+table Parameter
+	lineageTag: 592d87e1-8d6a-4fde-8c9d-0091e525a948
+
+	column Parameter
+		lineageTag: 5514df32-b72b-47b1-b172-7994c47a1eea
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Parameter Order'
+
+		relatedColumnDetails
+			groupByColumn: 'Parameter Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Parameter Fields'
+		isHidden
+		lineageTag: 4173eeb0-66cd-4db8-a752-e0b1aa8aa520
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Parameter Order'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Parameter Order'
+		isHidden
+		formatString: 0
+		lineageTag: 881694a7-7efa-4e43-bd49-4ad7b44cb506
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Parameter = calculated
+		mode: import
+		source =
+				{
+				    ("Age", NAMEOF('dim_series'[age_label]), 0),
+				    ("Sex", NAMEOF('dim_series'[sex_label]), 1),
+				    ("Spending category", NAMEOF('dim_series'[coicop18_label]), 2),
+				    ("Branch", NAMEOF('dim_series'[nace_r2_label]), 3),
+				    ("Survey component", NAMEOF('dim_series'[indic_label]), 4),
+				    ("Measure", NAMEOF('dim_series'[indic_bt_label]), 5)
+				}
+
+	annotation PBI_Id = 47fe38af56fa4a8080fe89445930aa3c
+

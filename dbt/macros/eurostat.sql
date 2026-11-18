@@ -17,3 +17,12 @@ left join {{ ref('code_short_labels') }} as {{ alias }}
 
 {# Breakdown dimensions dim_series splits out of breakdown_code, in column order. #}
 {% macro breakdown_dimensions() %}{{ return(['age', 'sex', 'coicop18', 'nace_r2', 'indic', 'indic_bt']) }}{% endmacro %}
+
+{# Everything that identifies a series within a dataset, as (name, dim_series column).
+   varies_in compares all of them against the headline: unit and s_adj too, since
+   otherwise several series per dataset would tie with the headline. #}
+{% macro series_dimensions() %}
+    {%- set out = [('unit', 'unit_code'), ('s_adj', 'adjustment_code')] -%}
+    {%- for d in breakdown_dimensions() %}{% do out.append((d, d ~ '_code')) %}{% endfor -%}
+    {{ return(out) }}
+{% endmacro %}

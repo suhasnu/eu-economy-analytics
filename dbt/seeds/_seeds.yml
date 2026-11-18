@@ -23,6 +23,11 @@ seeds:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [dimension, code]
+  - name: dimension_labels
+    description: Hand-maintained. Display names for the dimensions dim_series.varies_in can name.
+    columns:
+      - name: dimension
+        data_tests: [unique, not_null]
   - name: unit_aggregation_rules
     description: Hand-maintained. How values of each unit may be combined, and why.
     columns:

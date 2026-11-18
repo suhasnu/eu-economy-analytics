@@ -72,6 +72,22 @@ models:
                 values: [none, sum]
       - name: aggregation_description
         data_tests: [not_null]
+      - name: varies_in
+        description: >
+          How the series relates to its dataset's headline, comparing unit, s_adj and every
+          breakdown dimension. 'headline' when all match, the one differing dimension's name
+          (e.g. 'age') when exactly one differs, null when two or more do. Filter to
+          varies_in in ('headline', 'age') to get a clean single-dimension breakdown.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [headline, unit, s_adj, age, sex, coicop18, nace_r2, indic, indic_bt]
+      - name: varies_in_label
+        description: varies_in for display; null exactly when varies_in is.
+        data_tests:
+          - not_null:
+              config:
+                where: "varies_in is not null"
 
   - name: fct_observation
     description: One row per series, geo and month.

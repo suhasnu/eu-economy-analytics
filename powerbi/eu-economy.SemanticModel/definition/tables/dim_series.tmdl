@@ -141,6 +141,102 @@ table dim_series
 
 		annotation SummarizationSetBy = Automatic
 
+	column age_code
+		dataType: string
+		lineageTag: 6ec70049-a590-49ea-a169-78ee9f378a65
+		summarizeBy: none
+		sourceColumn: age_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column age_label
+		dataType: string
+		lineageTag: d3ca5c52-3a6a-4e84-800d-046ce60df43d
+		summarizeBy: none
+		sourceColumn: age_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column sex_code
+		dataType: string
+		lineageTag: 5cff127e-2484-4209-ab4c-7d1f41bb6a24
+		summarizeBy: none
+		sourceColumn: sex_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column sex_label
+		dataType: string
+		lineageTag: f383d0a2-69cd-4184-b311-d615105d870e
+		summarizeBy: none
+		sourceColumn: sex_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column coicop18_code
+		dataType: string
+		lineageTag: 0d57781b-75d6-4fd3-90d5-3c78abda913d
+		summarizeBy: none
+		sourceColumn: coicop18_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column coicop18_label
+		dataType: string
+		lineageTag: d1e38c7e-3fda-4933-a79a-8f4cb6d8109e
+		summarizeBy: none
+		sourceColumn: coicop18_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column nace_r2_code
+		dataType: string
+		lineageTag: cf4bf536-0a5a-4d78-9a94-a9a2d9a3e8d8
+		summarizeBy: none
+		sourceColumn: nace_r2_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column nace_r2_label
+		dataType: string
+		lineageTag: f0d4e81d-3a48-4aa0-9d80-50b45c2e7444
+		summarizeBy: none
+		sourceColumn: nace_r2_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column indic_code
+		dataType: string
+		lineageTag: 016b4b0d-3cf1-43e3-948e-cfe2ff3c2171
+		summarizeBy: none
+		sourceColumn: indic_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column indic_label
+		dataType: string
+		lineageTag: 1b83325b-b463-4690-b780-944a254e645f
+		summarizeBy: none
+		sourceColumn: indic_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column indic_bt_code
+		dataType: string
+		lineageTag: 86808729-4cba-4268-930c-c4f34b494a13
+		summarizeBy: none
+		sourceColumn: indic_bt_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column indic_bt_label
+		dataType: string
+		lineageTag: 0b53f3e4-0cde-4e2d-8e9a-794bcb4b12ef
+		summarizeBy: none
+		sourceColumn: indic_bt_label
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_series = m
 		mode: import
 		source =
