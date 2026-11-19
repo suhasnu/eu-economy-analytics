@@ -4,6 +4,7 @@ pyarrow
 pandera
 pytest
 pyyaml
+openpyxl
 google-cloud-bigquery
 dbt-core
 dbt-bigquery
