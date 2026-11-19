@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 import pandas as pd
@@ -7,7 +8,9 @@ from openpyxl import load_workbook
 from src.report.build_workbook import (
     HEADER_MAX_LINES,
     NUMBER_COLUMN_WIDTH,
+    COPYRIGHT_URL,
     build_workbook,
+    month_on_month_thresholds,
     usable_page_height,
     wrapped_lines,
 )
@@ -59,8 +62,10 @@ def _blocks(ws):
 
 
 def test_sheet_order_and_visibility(workbook):
-    assert workbook.sheetnames == ["Briefing", "Data", "Months", "Notes"]
-    assert [ws.sheet_state for ws in workbook.worksheets] == ["visible", "hidden", "hidden", "visible"]
+    assert workbook.sheetnames == ["Briefing", "Settings", "Data", "Months", "Notes"]
+    assert [ws.sheet_state for ws in workbook.worksheets] == [
+        "visible", "visible", "hidden", "hidden", "visible"
+    ]
     assert workbook.active.title == "Briefing"
 
 
@@ -206,6 +211,72 @@ def test_notes_sheet(workbook):
         if cell.value and len(cell.value) > 100:
             assert cell.alignment.wrap_text
             assert ws.row_dimensions[cell.row].height > 15
+
+
+def test_licence_wording(workbook):
+    ws = workbook["Notes"]
+    rows = [c.value for row in ws.iter_rows(min_col=2, max_col=2) for c in row]
+    licence = rows[rows.index("Licence") + 1]
+    assert "Reuse of Eurostat data is authorised" in licence
+    assert "provided the source is acknowledged" in licence
+    assert "Decision 2011/833/EU" in licence
+    assert "The required acknowledgement is: Source: Eurostat." in licence
+    assert "CC BY 4.0 licence that Eurostat refers to covers the editorial content" in licence
+    assert "not the data itself" in licence
+    assert "third parties" in licence and "outside the EU and EFTA" in licence
+    assert "do not affect this briefing" in licence
+    assert COPYRIGHT_URL == "https://ec.europa.eu/eurostat/help/copyright-notice"
+    assert COPYRIGHT_URL in licence
+
+
+def test_licence_names_geographies_outside_eu_and_efta(frame):
+    with_us = frame.replace({"geo_code": {"PL": "US"}, "geo_name": {"Poland": "United States"}})
+    ws = build_workbook(with_us)["Notes"]
+    rows = [c.value for row in ws.iter_rows(min_col=2, max_col=2) for c in row]
+    licence = rows[rows.index("Licence") + 1]
+    assert "United States falls under that exclusion" in licence
+    assert "do not affect" not in licence
+
+
+def test_settings_sheet_has_numeric_threshold_per_indicator(workbook):
+    ws = workbook["Settings"]
+    assert [c.value for c in ws[1]] == ["Indicator", "Threshold", "Note"]
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+    assert sorted(r[0] for r in rows) == sorted(INDICATORS)
+    for _, threshold, note in rows:
+        assert isinstance(threshold, (int, float)) and threshold > 0
+        assert "Editable" in note
+    assert workbook.defined_names["ThresholdValue"].attr_text == f"Settings!$B$2:$B${len(rows) + 1}"
+    assert workbook.defined_names["ThresholdIndicator"].attr_text == f"Settings!$A$2:$A${len(rows) + 1}"
+
+
+def test_thresholds_are_two_sd_of_consecutive_month_changes():
+    months = pd.date_range("2025-01-01", periods=4, freq="MS")
+    base = {"indicator_label": "X", "unit_kind": "ratio", "unit_short_label": "%", "geo_name": "n"}
+    rows = [{**base, "geo_code": "DE", "month": m, "value": v} for m, v in zip(months, [0.0, 1.0, 3.0, 6.0])]
+    # FR skips a month: its 0 -> 10 jump spans two months and must not count.
+    rows += [{**base, "geo_code": "FR", "month": months[i], "value": v} for i, v in [(0, 0.0), (2, 10.0), (3, 11.0)]]
+    changes = pd.Series([1.0, 2.0, 3.0, 1.0])
+    assert month_on_month_thresholds(pd.DataFrame(rows)) == {"X": round(2 * changes.std(), 1)}
+
+
+def test_large_changes_flagged_from_settings(workbook):
+    ws = workbook["Briefing"]
+    rules = {str(cf.sqref): cf.rules for cf in ws.conditional_formatting}
+    for _, _, rows in _blocks(ws):
+        change_range = f"E{rows[0]}:E{rows[-1]}"
+        assert change_range in rules
+        (rule,) = rules[change_range]
+        formula = rule.formula[0]
+        assert "ThresholdValue" in formula and "ThresholdIndicator" in formula
+        assert "ABS(" in formula
+        # Apart from cell references and MATCH's exact-match 0, no number appears.
+        literals = re.findall(r"\d+(?:\.\d+)?", re.sub(r"\$?[A-Z]+\$?\d+", "", formula))
+        assert set(literals) <= {"0"}
+        assert rule.dxf.fill.fgColor.rgb.endswith("FDF0D5")
+        assert rule.dxf.font.b
+    year_columns = [r for r in rules if r.startswith("G")]
+    assert not year_columns
 
 
 def test_rejects_wildcard_characters_in_keys(frame):

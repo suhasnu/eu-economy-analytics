@@ -1,7 +1,8 @@
 """Build the monthly briefing workbook from fetch_briefing_frame.
 
-Briefing  the one visible sheet: ReportMonth, then one block per indicator of
-          INDEX/MATCH formulas, so picking another ReportMonth recalculates everything
+Briefing  the main sheet: ReportMonth, then one block per indicator of INDEX/MATCH
+          formulas, so picking another ReportMonth recalculates everything
+Settings  visible, one editable flagging threshold per indicator
 Data      hidden, the frame plus a key column, referenced through DataKey and DataValue
 Months    hidden, the months in the data, the list ReportMonth is validated against
 Notes     visible, plain prose on sources, units, release timing and regeneration
@@ -18,6 +19,7 @@ from pathlib import Path
 
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook.defined_name import DefinedName
@@ -83,6 +85,23 @@ HEADING_HEIGHT = 22
 BODY_HEIGHT = 18
 HEADER_MAX_LINES = 2
 
+# Notes prose is mostly lower case, narrower on average than the digits column widths
+# are measured in, so it needs a smaller factor than the headers.
+PROSE_WIDTH_FACTOR = 1.0
+NOTES_GAP_HEIGHT = 6
+
+COPYRIGHT_URL = "https://ec.europa.eu/eurostat/help/copyright-notice"
+# Eurostat codes; Greece is EL. Decides which licence sentence the Notes sheet carries.
+EU_MEMBERS = frozenset(
+    "AT BE BG CY CZ DE DK EE EL ES FI FR HR HU IE IT LT LU LV MT NL PL PT RO SE SI SK".split()
+)
+EFTA_MEMBERS = frozenset("CH IS LI NO".split())
+EU_AGGREGATE_PATTERN = r"^(EA|EU)"
+
+THRESHOLD_SIGMAS = 2
+FLAG_FILL = PatternFill(start_color="FDF0D5", end_color="FDF0D5", fill_type="solid")
+FLAG_FONT = Font(bold=True)
+
 A4_SHORT_SIDE_IN = 8.27
 MARGIN_SIDE_IN = 0.5
 MARGIN_TOP_BOTTOM_IN = 0.6
@@ -99,9 +118,9 @@ def block_headers(unit: str, change_unit: str) -> list[str]:
     ]
 
 
-def wrapped_lines(text: str, width: float) -> int:
+def wrapped_lines(text: str, width: float, char_factor: float = CHAR_WIDTH_FACTOR) -> int:
     """Lines Excel needs to show `text` wrapped at word boundaries in a column `width` wide."""
-    capacity = (width - 1) / CHAR_WIDTH_FACTOR
+    capacity = (width - 1) / char_factor
     lines, used = 0, None
     for word in text.split():
         if used is not None and used + 1 + len(word) <= capacity:
@@ -310,6 +329,34 @@ def _set_up_page(ws: Worksheet, last_column: str, last_row: int, landscape: bool
     ws.page_margins.header = ws.page_margins.footer = 0.3
 
 
+def _licence_text(df: pd.DataFrame) -> str:
+    geos = df[["geo_code", "geo_name"]].drop_duplicates()
+    is_eu = geos["geo_code"].isin(EU_MEMBERS) | geos["geo_code"].str.match(EU_AGGREGATE_PATTERN)
+    is_efta = geos["geo_code"].isin(EFTA_MEMBERS)
+    outside = geos.loc[~(is_eu | is_efta), "geo_name"].tolist()
+    if outside:
+        scope = (
+            f"Data for {', '.join(outside)} falls under that exclusion, so check the notice "
+            "before reusing those figures commercially."
+        )
+    elif is_efta.any():
+        scope = f"These exclusions do not affect this briefing: all {len(geos)} geographies are in the EU or EFTA."
+    else:
+        scope = (
+            f"These exclusions do not affect this briefing: all {len(geos)} geographies are EU "
+            "member states or the euro area, an aggregate of EU members."
+        )
+    return (
+        "Reuse of Eurostat data is authorised, free of charge, provided the source is "
+        "acknowledged, under European Commission Decision 2011/833/EU on the reuse of "
+        "Commission documents. The required acknowledgement is: Source: Eurostat. Any copy or "
+        "extract of this briefing should keep it. The CC BY 4.0 licence that Eurostat refers "
+        "to covers the editorial content of the Eurostat website, not the data itself. "
+        "Eurostat excludes from commercial reuse data supplied by third parties and data for "
+        f"countries outside the EU and EFTA. {scope} Full terms: {COPYRIGHT_URL}"
+    )
+
+
 def notes_sections(df: pd.DataFrame) -> list[tuple[str, str]]:
     indicators = sorted(df["indicator_label"].unique())
     n = len(indicators)
@@ -322,13 +369,14 @@ def notes_sections(df: pd.DataFrame) -> list[tuple[str, str]]:
             "Eurostat published them on the date this file was generated; later revisions by "
             "Eurostat are not reflected until the file is regenerated.",
         ),
+        ("Licence", _licence_text(df)),
         (
-            "Licence",
-            "Eurostat data may be reused free of charge, for commercial and non-commercial purposes, "
-            "under the European Commission's reuse policy (Decision 2011/833/EU) and the Creative "
-            "Commons Attribution 4.0 licence (CC BY 4.0). The condition is that the source is "
-            "acknowledged: Source: Eurostat. Any copy or extract of this briefing should keep that "
-            "acknowledgement.",
+            "Flagged changes",
+            "A month-on-month change is highlighted when its size, up or down, exceeds the "
+            "threshold for its indicator on the Settings sheet. Highlighting marks an unusually "
+            "large move, not a good or bad one. Each threshold starts at two standard deviations "
+            "of that indicator's month-on-month changes across all geographies over the months in "
+            "this file; edit a threshold on the Settings sheet and the flags update immediately.",
         ),
         (
             "Units of the change columns",
@@ -387,9 +435,78 @@ def _write_notes(wb: Workbook, df: pd.DataFrame) -> None:
         body = ws.cell(row=row + 1, column=2, value=text)
         body.font = BODY_FONT
         body.alignment = WRAP
-        ws.row_dimensions[row + 1].height = wrapped_lines(text, NOTES_COLUMN_WIDTH) * LINE_HEIGHT_PT + 4
+        lines = wrapped_lines(text, NOTES_COLUMN_WIDTH, PROSE_WIDTH_FACTOR)
+        ws.row_dimensions[row + 1].height = lines * LINE_HEIGHT_PT + 2
+        ws.row_dimensions[row + 2].height = NOTES_GAP_HEIGHT
         row += 3
     _set_up_page(ws, "B", row - 2, landscape=False)
+
+
+def month_on_month_thresholds(df: pd.DataFrame) -> dict[str, float]:
+    """Two standard deviations of each indicator's month-on-month changes, pooled across geos.
+
+    Only changes between consecutive months count, so a gap in a series does not produce a
+    two-month change. Rounded to the one decimal the sheet displays, and never below 0.1 so a
+    flat series does not flag every non-zero change.
+    """
+    d = df.sort_values(["indicator_label", "geo_code", "month"])
+    d = d.assign(month_index=d["month"].dt.year * 12 + d["month"].dt.month)
+    by_series = d.groupby(["indicator_label", "geo_code"])
+    consecutive = by_series["month_index"].diff() == 1
+    changes = d.assign(change=by_series["value"].diff())[consecutive]
+    spread = changes.groupby("indicator_label")["change"].std()
+    missing = sorted(set(d["indicator_label"]) - set(spread.dropna().index))
+    if missing:
+        raise ValueError(f"too few consecutive months to set a threshold for {missing}")
+    return {label: max(round(THRESHOLD_SIGMAS * sd, 1), 0.1) for label, sd in spread.items()}
+
+
+def _write_settings(wb: Workbook, df: pd.DataFrame) -> None:
+    ws = wb.create_sheet("Settings")
+    ws.sheet_view.showGridLines = False
+    headers = ["Indicator", "Threshold", "Note"]
+    for col, text in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col, value=text)
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+    units = df.drop_duplicates("indicator_label").set_index("indicator_label")["unit_kind"]
+    thresholds = month_on_month_thresholds(df)
+    for row, (label, threshold) in enumerate(sorted(thresholds.items()), start=2):
+        change_unit = CHANGE_UNITS[units[label]]
+        ws.cell(row=row, column=1, value=label).font = BODY_FONT
+        value = ws.cell(row=row, column=2, value=threshold)
+        value.font = BODY_FONT
+        value.number_format = "0.0"
+        ws.cell(
+            row=row, column=3,
+            value=f"Editable. Flags a month-on-month change larger than this, in {change_unit}, either way.",
+        ).font = BODY_FONT
+    last = len(thresholds) + 1
+    validation = DataValidation(
+        type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=False,
+        showErrorMessage=True, errorTitle="Threshold", error="Enter a number of 0 or more.",
+    )
+    ws.add_data_validation(validation)
+    validation.add(f"B2:B{last}")
+    ws.column_dimensions["A"].width = math.ceil(max(map(len, thresholds)) * CHAR_WIDTH_FACTOR) + 2
+    ws.column_dimensions["B"].width = 12
+    ws.column_dimensions["C"].width = 78
+    _define(wb, "ThresholdIndicator", "Settings", f"$A$2:$A${last}")
+    _define(wb, "ThresholdValue", "Settings", f"$B$2:$B${last}")
+
+
+def _flag_large_changes(ws: Worksheet, blocks: list[range]) -> None:
+    # Through defined names: conditional formats cannot point at another sheet directly in
+    # older Excel, and a name keeps the threshold live when Settings is edited.
+    col = get_column_letter(CHANGE_COLUMNS[0])
+    for block in blocks:
+        first, last = block.start + 2, block.stop - 1
+        threshold = f"INDEX(ThresholdValue,MATCH($A${block.start},ThresholdIndicator,0))"
+        formula = f"IF(ISNUMBER({col}{first}),ABS({col}{first})>{threshold},FALSE)"
+        ws.conditional_formatting.add(
+            f"{col}{first}:{col}{last}",
+            FormulaRule(formula=[formula], fill=FLAG_FILL, font=FLAG_FONT, stopIfTrue=False),
+        )
 
 
 def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
@@ -401,6 +518,7 @@ def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     wb = Workbook()
     briefing = wb.active
     briefing.title = "Briefing"
+    _write_settings(wb, df)
     _write_data(wb, df)
     _write_months(wb, months)
     _write_title(briefing, default_report_month(df), generated or date.today())
@@ -411,6 +529,7 @@ def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     briefing.print_title_rows = f"1:{TITLE_ROWS}"
     briefing.print_options.horizontalCentered = True
     _break_pages(briefing, blocks)
+    _flag_large_changes(briefing, blocks)
     _write_notes(wb, df)
     _define(wb, "ReportMonth", "Briefing", "$C$3")
     # openpyxl stores formulas without cached results; this makes Excel compute them on open.

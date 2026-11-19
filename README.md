@@ -1,7 +1,7 @@
 # EU Economy Analytics
 
 Five monthly Eurostat indicators for Germany and five European comparators, from the
-Eurostat API through BigQuery to Power BI.
+Eurostat API through BigQuery to a Power BI report and an Excel briefing.
 
 ![Overview page](docs/overview.png)
 
@@ -15,6 +15,7 @@ Eurostat API (JSON-stat)
   -> BigQuery
   -> dbt star schema
   -> Power BI (.pbip, TMDL model + PBIR report)
+  -> Excel briefing (openpyxl, live formulas)
 ```
 
 Indicators: unemployment, HICP inflation, industrial production, retail trade volume,
@@ -22,6 +23,18 @@ consumer confidence. Geographies: Germany, France, Italy, Netherlands, Poland, e
 
 dbt builds against BigQuery or a local DuckDB copy, so the model and its tests run without
 cloud credentials.
+
+## Monthly briefing workbook
+
+![Briefing sheet](docs/briefing.png)
+
+Python writes a hidden data sheet; every visible number is an INDEX/MATCH formula keyed on
+a report month cell, so changing the month recalculates the sheet. Thresholds on a Settings
+sheet are editable, and conditional formatting flags month-on-month moves beyond them.
+
+```bash
+python -m src.report.build_workbook
+```
 
 ## Aggregation safety
 
