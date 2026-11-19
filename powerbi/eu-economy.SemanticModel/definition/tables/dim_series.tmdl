@@ -253,6 +253,14 @@ table dim_series
 
 		annotation SummarizationSetBy = Automatic
 
+	column aggregation_short
+		dataType: string
+		lineageTag: a6437505-20b8-4236-b14f-509f6d01f0ff
+		summarizeBy: none
+		sourceColumn: aggregation_short
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_series = m
 		mode: import
 		source =

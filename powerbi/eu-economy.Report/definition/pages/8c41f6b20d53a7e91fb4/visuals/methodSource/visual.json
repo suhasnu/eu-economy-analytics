@@ -6,7 +6,7 @@
     "y": 114,
     "z": 10,
     "width": 400,
-    "height": 250,
+    "height": 210,
     "tabOrder": 100
   },
   "visual": {
@@ -31,7 +31,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Eurostat's dissemination API, in JSON-stat. A Python job fetches each dataset, validates it and loads it into BigQuery.",
+                    "value": "•  Eurostat dissemination API, in JSON-stat",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"
@@ -42,7 +42,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "dbt builds a star schema: one fact table, with series, geography and date dimensions. This report reads those marts.",
+                    "value": "•  Python fetches each dataset, validates it, loads it into BigQuery",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"
@@ -53,7 +53,18 @@
               {
                 "textRuns": [
                   {
-                    "value": "No figure here is typed by hand.",
+                    "value": "•  dbt builds a star schema: fact, series, geography, date",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "•  The report reads those marts; no figure is typed by hand",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"

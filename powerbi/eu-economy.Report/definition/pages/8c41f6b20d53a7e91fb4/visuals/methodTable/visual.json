@@ -3,10 +3,10 @@
   "name": "methodTable",
   "position": {
     "x": 16,
-    "y": 380,
+    "y": 340,
     "z": 40,
-    "height": 320,
-    "width": 1248,
+    "height": 215,
+    "width": 1130,
     "tabOrder": 400
   },
   "visual": {
@@ -53,11 +53,26 @@
                       "Entity": "dim_series"
                     }
                   },
-                  "Property": "aggregation_description"
+                  "Property": "unit_kind"
                 }
               },
-              "queryRef": "dim_series.aggregation_description",
-              "nativeQueryRef": "aggregation_description",
+              "queryRef": "dim_series.unit_kind",
+              "nativeQueryRef": "unit_kind",
+              "displayName": "Kind"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_series"
+                    }
+                  },
+                  "Property": "aggregation_short"
+                }
+              },
+              "queryRef": "dim_series.aggregation_short",
+              "nativeQueryRef": "aggregation_short",
               "displayName": "How it may be combined"
             },
             {
@@ -169,59 +184,73 @@
       ],
       "columnWidth": [
         {
-          "properties": {
-            "value": {
-              "expr": {
-                "Literal": {
-                  "Value": "260D"
-                }
-              }
-            }
-          },
           "selector": {
             "metadata": "dim_series.indicator_label"
-          }
-        },
-        {
+          },
           "properties": {
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "110D"
+                  "Value": "340D"
                 }
               }
             }
-          },
+          }
+        },
+        {
           "selector": {
             "metadata": "dim_series.unit_short_label"
-          }
-        },
-        {
+          },
           "properties": {
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "620D"
+                  "Value": "130D"
                 }
               }
             }
-          },
+          }
+        },
+        {
           "selector": {
-            "metadata": "dim_series.aggregation_description"
-          }
-        },
-        {
+            "metadata": "dim_series.unit_kind"
+          },
           "properties": {
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "150D"
+                  "Value": "140D"
                 }
               }
             }
+          }
+        },
+        {
+          "selector": {
+            "metadata": "dim_series.aggregation_short"
           },
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "300D"
+                }
+              }
+            }
+          }
+        },
+        {
           "selector": {
             "metadata": "_Measures.Latest Month"
+          },
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "170D"
+                }
+              }
+            }
           }
         }
       ]

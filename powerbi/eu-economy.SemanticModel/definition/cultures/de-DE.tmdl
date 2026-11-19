@@ -241,10 +241,40 @@ cultureInfo de-DE
 			          "ConceptualProperty": "aggregation_description"
 			        }
 			      },
+			      "State": "Generated"
+			    },
+			    "dim_series.aggregation_short": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_series",
+			          "ConceptualProperty": "aggregation_short"
+			        }
+			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
 			          "How it may be combined": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_series.unit_kind": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_series",
+			          "ConceptualProperty": "unit_kind"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Kind": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

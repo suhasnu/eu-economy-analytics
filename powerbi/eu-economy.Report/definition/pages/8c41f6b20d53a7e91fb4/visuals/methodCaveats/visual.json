@@ -6,7 +6,7 @@
     "y": 114,
     "z": 30,
     "width": 416,
-    "height": 250,
+    "height": 210,
     "tabOrder": 300
   },
   "visual": {
@@ -31,7 +31,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Rates change in percentage points, indices in points. Neither is a percentage change.",
+                    "value": "•  Rates change in percentage points, indices in points",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"
@@ -42,7 +42,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "The euro area is EA21 at fixed composition, so the series stays continuous.",
+                    "value": "•  Neither is a percentage change",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"
@@ -53,7 +53,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Unemployment is the Eurostat harmonised rate, lower than the Bundesagentur figure.",
+                    "value": "•  The euro area is EA21 at fixed composition, so the series is continuous",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"
@@ -64,7 +64,18 @@
               {
                 "textRuns": [
                   {
-                    "value": "Indicators publish on different schedules, so each carries its own month.",
+                    "value": "•  Unemployment is the harmonised rate, below the Bundesagentur figure",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "•  Each indicator has its own latest month",
                     "textStyle": {
                       "fontSize": "10pt",
                       "color": "#1B2733"

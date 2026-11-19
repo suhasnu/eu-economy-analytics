@@ -72,5 +72,5 @@ application default credentials.
 
 ## Not done yet
 
-Two report pages; country comparison and method pages are outstanding. Destatis regional
-data is not wired in.
+Three report pages; a country comparison page is outstanding. Destatis regional data is
+not wired in.
