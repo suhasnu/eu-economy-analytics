@@ -5,6 +5,8 @@ Eurostat API through BigQuery to Power BI.
 
 ![Overview page](docs/overview.png)
 
+![Indicator detail page](docs/indicator-detail.png)
+
 ## Pipeline
 
 ```
@@ -54,5 +56,5 @@ application default credentials.
 
 ## Not done yet
 
-One report page; indicator detail, country comparison and method pages are outstanding.
-Destatis regional data is not wired in.
+Two report pages; country comparison and method pages are outstanding. Destatis regional
+data is not wired in.

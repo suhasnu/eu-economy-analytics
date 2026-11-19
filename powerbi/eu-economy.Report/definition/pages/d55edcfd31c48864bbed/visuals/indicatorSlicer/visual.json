@@ -188,6 +188,20 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "47e0c595033210a33d2b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_series"
+              }
+            },
+            "Property": "short_label"
+          }
+        },
+        "type": "Categorical"
       }
     ]
   }

@@ -237,6 +237,22 @@ table dim_series
 
 		annotation SummarizationSetBy = Automatic
 
+	column varies_in
+		dataType: string
+		lineageTag: 11de15b0-238e-42d8-bca2-03fcc95952ff
+		summarizeBy: none
+		sourceColumn: varies_in
+
+		annotation SummarizationSetBy = Automatic
+
+	column varies_in_label
+		dataType: string
+		lineageTag: daf3baa2-5ae5-4269-887b-7bfd4ff1c897
+		summarizeBy: none
+		sourceColumn: varies_in_label
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_series = m
 		mode: import
 		source =

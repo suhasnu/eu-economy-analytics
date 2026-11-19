@@ -83,6 +83,18 @@ table _Measures
 			    )
 		lineageTag: 13da94ef-73af-436d-a78c-a1ada64748b1
 
+	/// Signed change with its unit only, no trailing phrase.
+	measure 'Latest Change Short' =
+			VAR Chg = [Latest Change]
+			VAR IsIndex = SELECTEDVALUE ( dim_series[unit_code] ) = "I21"
+			RETURN
+			    IF (
+			        NOT ISBLANK ( Chg ),
+			        FORMAT ( Chg, "+0.0;-0.0;0.0", "en-US" )
+			            & IF ( IsIndex, "%", " pp" )
+			    )
+		lineageTag: b8adc8a8-d105-4659-996f-01bc1a83714a
+
 	column _
 		isHidden
 		lineageTag: abba6b1d-b759-4223-bff1-d89abe307e8e
