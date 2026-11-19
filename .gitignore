@@ -11,3 +11,4 @@ dbt/logs/
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
 *.pbix
+build/

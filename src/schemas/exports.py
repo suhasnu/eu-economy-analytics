@@ -20,3 +20,24 @@ HeadlineExportSchema = pa.DataFrameSchema(
     ordered=True,
     coerce=True,
 )
+
+BriefingSchema = pa.DataFrameSchema(
+    {
+        "geo_code": pa.Column(str, nullable=False),
+        "geo_name": pa.Column(str, nullable=False),
+        "indicator_label": pa.Column(str, nullable=False),
+        # The briefing picks pp or % from unit_kind, so a missing rule must fail here.
+        "unit_kind": pa.Column(str, nullable=False),
+        "unit_short_label": pa.Column(str, nullable=False),
+        "month": pa.Column(
+            "datetime64[ns]",
+            pa.Check(lambda s: s.dt.day == 1, error="month must be the 1st"),
+            nullable=False,
+        ),
+        "value": pa.Column(float, nullable=False),
+    },
+    unique=["geo_code", "indicator_label", "month"],
+    strict=True,
+    ordered=True,
+    coerce=True,
+)
