@@ -2,6 +2,8 @@
 
 Briefing  the main sheet: ReportMonth, then one block per indicator of INDEX/MATCH
           formulas, so picking another ReportMonth recalculates everything
+Chart     visible, 36 months of the indicator picked in ChartIndicator for every geography,
+          above the visible working data the chart reads
 Settings  visible, one editable flagging threshold per indicator
 Data      hidden, the frame plus a key column, referenced through DataKey and DataValue
 Months    hidden, the months in the data, the list ReportMonth is validated against
@@ -14,14 +16,24 @@ from __future__ import annotations
 
 import argparse
 import math
+import re
+import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.chart import LineChart, Reference
+from openpyxl.chart.axis import ChartLines, DateAxis
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.chart.data_source import StrRef
+from openpyxl.chart.text import RichText, Text
+from openpyxl.chart.title import Title
+from openpyxl.drawing.line import LineProperties
+from openpyxl.drawing.text import CharacterProperties, Paragraph, ParagraphProperties
 from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
+from openpyxl.utils import absolute_coordinate, get_column_letter
 from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.pagebreak import Break
@@ -102,7 +114,37 @@ THRESHOLD_SIGMAS = 2
 FLAG_FILL = PatternFill(start_color="FDF0D5", end_color="FDF0D5", fill_type="solid")
 FLAG_FONT = Font(bold=True)
 
+# Series colours as the Power BI report sets them: the theme's first five data colours for
+# the countries, and the report's grey override for the euro area benchmark.
+GEO_COLOURS = {"DE": "0072B2", "FR": "D55E00", "IT": "009E73", "NL": "7B52AB", "PL": "E69F00"}
+BENCHMARK_COLOUR = "9AA5B1"
+GRIDLINE = "EDF0F3"
+AXIS_LINE = "D7DCE1"
+WORKING_FILL = PatternFill("solid", fgColor="F6F7F9")
+DEFAULT_CHART_INDICATOR_PREFIX = "Unemployment"
+CHART_INDICATOR_CELL = "C3"
+CHART_MONTHS = 36
+# One more month than the chart shows: the report month usually trails the newest data by a
+# month, and the chart's window ends at the report month.
+DEFAULT_MONTHS = CHART_MONTHS + 1
+CHART_ANCHOR = "B6"
+CHART_UNIT_CELL = "C5"
+CHART_HEIGHT_CM = 11.5
+# B holds the "Report month" label and the month column; C onwards one geography each.
+CHART_LABEL_WIDTH = math.ceil(len("Report month") * CHAR_WIDTH_FACTOR) + 2
+CHART_VALUE_WIDTH = 19
+WORKING_ROW_HEIGHT = 12.5
+WORKING_FONT = Font(name=FONT_FACE, size=9, color=FOREGROUND)
+CHART_LINE_PT = 2
+EMU_PER_PT = 12700
+# The chart spans rows 6 to 29 (24 rows of 15pt, about 12.7 cm), so the block starts below it.
+CHART_LABEL_ROW = 31
+CHART_CODE_ROW = 32
+CHART_HEADER_ROW = 33
+
 A4_SHORT_SIDE_IN = 8.27
+A4_LONG_SIDE_IN = 11.69
+CM_PER_IN = 2.54
 MARGIN_SIDE_IN = 0.5
 MARGIN_TOP_BOTTOM_IN = 0.6
 
@@ -132,16 +174,19 @@ def wrapped_lines(text: str, width: float, char_factor: float = CHAR_WIDTH_FACTO
     return max(lines, 1)
 
 
-def _month_key(offset: int) -> str:
+def _month_text(month: str) -> str:
     # YEAR and MONTH rather than TEXT(..., "yyyy-mm"): TEXT format codes are localised,
     # so "yyyy" would not be understood by a German or French Excel.
-    month = f"EDATE(ReportMonth,{offset})"
     return f'YEAR({month})&"-"&TEXT(MONTH({month}),"00")'
 
 
-def _lookup(geo_cell: str, indicator_cell: str, offset: int) -> str:
-    key = f'{geo_cell}&"|"&{indicator_cell}&"|"&{_month_key(offset)}'
-    return f'=IFERROR(INDEX(DataValue,MATCH({key},DataKey,0)),"")'
+def _lookup(geo: str, indicator: str, month: str, missing: str = '""') -> str:
+    key = f'{geo}&"|"&{indicator}&"|"&{_month_text(month)}'
+    return f"=IFERROR(INDEX(DataValue,MATCH({key},DataKey,0)),{missing})"
+
+
+def _briefing_lookup(geo_cell: str, indicator_cell: str, offset: int) -> str:
+    return _lookup(geo_cell, indicator_cell, f"EDATE(ReportMonth,{offset})")
 
 
 def _difference(now: str, then: str) -> str:
@@ -178,7 +223,7 @@ def _write_data(wb: Workbook, df: pd.DataFrame) -> None:
     ws.append(["key", *DATA_COLUMNS])
     month_col = get_column_letter(DATA_COLUMNS.index("month") + 2)
     for i, row in enumerate(df[DATA_COLUMNS].itertuples(index=False), start=2):
-        key = f'=B{i}&"|"&D{i}&"|"&YEAR({month_col}{i})&"-"&TEXT(MONTH({month_col}{i}),"00")'
+        key = f'=B{i}&"|"&D{i}&"|"&{_month_text(f"{month_col}{i}")}'
         ws.append([key, row.geo_code, row.geo_name, row.indicator_label, row.unit_kind,
                    row.unit_short_label, row.month.to_pydatetime(), float(row.value)])
         ws[f"{month_col}{i}"].number_format = "yyyy-mm-dd"
@@ -189,6 +234,9 @@ def _write_data(wb: Workbook, df: pd.DataFrame) -> None:
     ws.add_table(table)
     _define(wb, "DataKey", "Data", f"$A$2:$A${last}")
     _define(wb, "DataValue", "Data", f"${value_col}$2:${value_col}${last}")
+    for name, column in (("DataIndicator", "indicator_label"), ("DataUnit", "unit_short_label")):
+        col = get_column_letter(DATA_COLUMNS.index(column) + 2)
+        _define(wb, name, "Data", f"${col}$2:${col}${last}")
 
 
 def _write_months(wb: Workbook, months: list[pd.Timestamp]) -> None:
@@ -262,10 +310,10 @@ def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> list[range]:
             ws.row_dimensions[r].height = BODY_HEIGHT
             ws.cell(row=r, column=1, value=geo.geo_code)
             ws.cell(row=r, column=2, value=geo.geo_name)
-            ws.cell(row=r, column=3, value=_lookup(geo_cell, indicator_cell, 0))
-            ws.cell(row=r, column=4, value=_lookup(geo_cell, indicator_cell, -1))
+            ws.cell(row=r, column=3, value=_briefing_lookup(geo_cell, indicator_cell, 0))
+            ws.cell(row=r, column=4, value=_briefing_lookup(geo_cell, indicator_cell, -1))
             ws.cell(row=r, column=5, value=_difference(f"C{r}", f"D{r}"))
-            ws.cell(row=r, column=6, value=_lookup(geo_cell, indicator_cell, -12))
+            ws.cell(row=r, column=6, value=_briefing_lookup(geo_cell, indicator_cell, -12))
             ws.cell(row=r, column=7, value=_difference(f"C{r}", f"F{r}"))
             for col in range(2, 8):
                 cell = ws.cell(row=r, column=col)
@@ -281,10 +329,24 @@ def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> list[range]:
     return blocks
 
 
+def column_width_cm(width: float) -> float:
+    """Rendered width of a column, from Excel's 7 px per character of the default 11pt font plus 5 px padding."""
+    return math.trunc(width * 7 + 5) / 96 * CM_PER_IN
+
+
+def printable_width_cm(landscape: bool = True) -> float:
+    page = A4_LONG_SIDE_IN if landscape else A4_SHORT_SIDE_IN
+    return (page - 2 * MARGIN_SIDE_IN) * CM_PER_IN
+
+
+def printable_height_pt(landscape: bool = True) -> float:
+    page = A4_SHORT_SIDE_IN if landscape else A4_LONG_SIDE_IN
+    return (page - 2 * MARGIN_TOP_BOTTOM_IN) * 72
+
+
 def usable_page_height() -> float:
     """Printable height of a landscape A4 page in points, less the repeated title rows."""
-    printable = (A4_SHORT_SIDE_IN - 2 * MARGIN_TOP_BOTTOM_IN) * 72
-    return printable - sum(TITLE_ROW_HEIGHTS.values())
+    return printable_height_pt() - sum(TITLE_ROW_HEIGHTS.values())
 
 
 def _break_pages(ws: Worksheet, blocks: list[range]) -> None:
@@ -379,6 +441,18 @@ def notes_sections(df: pd.DataFrame) -> list[tuple[str, str]]:
             "this file; edit a threshold on the Settings sheet and the flags update immediately.",
         ),
         (
+            "The chart",
+            "The Chart sheet draws 36 months of one indicator for every geography, ending at the "
+            "report month, with the indicator's unit on the value axis. It follows two settings: "
+            "the report month chosen on the Briefing sheet, and its own Indicator picker at the "
+            "top of the Chart sheet. Changing either redraws the chart. The working data block "
+            "beneath the chart, printed on its own page, holds exactly the values the "
+            "chart plots, looked up from the same data as the Briefing, so any point on the chart "
+            "can be checked against it. Months with no published figure show #N/A there and are "
+            "left out of the line rather than drawn as zero. The euro area is drawn in grey as the "
+            "benchmark the countries are read against.",
+        ),
+        (
             "Units of the change columns",
             "The change columns are plain differences between two published values, never "
             "percentages. For rates and ratios, such as the HICP annual rate of change and the "
@@ -414,8 +488,10 @@ def notes_sections(df: pd.DataFrame) -> list[tuple[str, str]]:
             "project's dbt marts and then regenerate the workbook from the project directory with "
             "python -m src.report.build_workbook, which writes build/eu-economy-briefing.xlsx. "
             "It reads from BigQuery when BQ_PROJECT and BQ_DBT_DATASET are set and from the local "
-            "DuckDB copy otherwise; --months sets how many months of history are included "
-            "(36 by default).",
+            "DuckDB copy otherwise. --months sets how many months of history are included, 37 "
+            "by default: one more than the chart's 36-month window, because the report month "
+            "usually trails the newest data by a month. If an indicator lags further, the build "
+            "fetches the extra months needed to keep the chart's window fully covered.",
         ),
     ]
 
@@ -493,6 +569,7 @@ def _write_settings(wb: Workbook, df: pd.DataFrame) -> None:
     ws.column_dimensions["C"].width = 78
     _define(wb, "ThresholdIndicator", "Settings", f"$A$2:$A${last}")
     _define(wb, "ThresholdValue", "Settings", f"$B$2:$B${last}")
+    _define(wb, "IndicatorList", "Settings", f"$A$2:$A${last}")
 
 
 def _flag_large_changes(ws: Worksheet, blocks: list[range]) -> None:
@@ -509,6 +586,168 @@ def _flag_large_changes(ws: Worksheet, blocks: list[range]) -> None:
         )
 
 
+def chart_geos(df: pd.DataFrame) -> list[tuple[str, str]]:
+    """Countries by code, then aggregates last: the euro area is the benchmark, not one more country."""
+    geos = df[["geo_code", "geo_name"]].drop_duplicates()
+    is_aggregate = geos["geo_code"].str.match(EU_AGGREGATE_PATTERN)
+    ordered = pd.concat([geos[~is_aggregate].sort_values("geo_code"), geos[is_aggregate].sort_values("geo_code")])
+    return list(ordered.itertuples(index=False, name=None))
+
+
+def geo_colour(code: str) -> str:
+    if re.match(EU_AGGREGATE_PATTERN, code):
+        return BENCHMARK_COLOUR
+    if code not in GEO_COLOURS:
+        raise ValueError(f"no chart colour for {code}; add it to GEO_COLOURS")
+    return GEO_COLOURS[code]
+
+
+def default_chart_indicator(df: pd.DataFrame) -> str:
+    labels = sorted(df["indicator_label"].unique())
+    return next((label for label in labels if label.startswith(DEFAULT_CHART_INDICATOR_PREFIX)), labels[0])
+
+
+def _text_properties(colour: str, size_pt: int) -> RichText:
+    props = CharacterProperties(solidFill=colour, sz=size_pt * 100)
+    return RichText(p=[Paragraph(pPr=ParagraphProperties(defRPr=props), endParaRPr=props)])
+
+
+def _line(colour: str, width_pt: float) -> GraphicalProperties:
+    return GraphicalProperties(ln=LineProperties(solidFill=colour, w=int(width_pt * EMU_PER_PT)))
+
+
+def _write_chart_sheet(wb: Workbook, df: pd.DataFrame) -> None:
+    ws = wb.create_sheet("Chart")
+    ws.sheet_view.showGridLines = False
+    geos = chart_geos(df)
+    first_col, last_col = 3, 2 + len(geos)
+
+    ws["B1"] = "=ChartIndicator"
+    ws["B1"].font = TITLE_FONT
+    ws["B3"] = "Indicator"
+    ws["B3"].font = BODY_FONT
+    picker = ws[CHART_INDICATOR_CELL]
+    picker.value = default_chart_indicator(df)
+    picker.font = Font(name=FONT_FACE, size=11, bold=True, color=FOREGROUND)
+    validation = DataValidation(
+        type="list", formula1="=IndicatorList", allow_blank=False,
+        showErrorMessage=True, errorTitle="Indicator", error="Pick an indicator from the list.",
+    )
+    ws.add_data_validation(validation)
+    validation.add(CHART_INDICATOR_CELL)
+    ws["B4"] = "Report month"
+    ws["B4"].font = BODY_FONT
+    ws["C4"] = "=ReportMonth"
+    ws["C4"].number_format = MONTH_FORMAT
+    ws["C4"].font = BODY_FONT
+    ws["C4"].alignment = Alignment(horizontal="left")
+    ws["D4"] = "set on the Briefing sheet"
+    ws["D4"].font = SOURCE_FONT
+    ws["B5"] = "Unit"
+    ws["B5"].font = BODY_FONT
+    ws[CHART_UNIT_CELL] = '=IFERROR(INDEX(DataUnit,MATCH(ChartIndicator,DataIndicator,0)),"")'
+    ws[CHART_UNIT_CELL].font = BODY_FONT
+    for row, height in TITLE_ROW_HEIGHTS.items():
+        ws.row_dimensions[row].height = height
+    for row in range(TITLE_ROWS + 1, CHART_LABEL_ROW):
+        ws.row_dimensions[row].height = LINE_HEIGHT_PT
+
+    ws.cell(row=CHART_LABEL_ROW, column=2, value=(
+        "Working data: the values the chart above plots. They follow the indicator picked above "
+        "and the report month on the Briefing sheet; #N/A marks a month with no published figure."
+    )).font = SOURCE_FONT
+    ws.cell(row=CHART_CODE_ROW, column=2, value="Code")
+    ws.cell(row=CHART_HEADER_ROW, column=2, value="Month")
+    for col, (code, name) in enumerate(geos, start=first_col):
+        ws.cell(row=CHART_CODE_ROW, column=col, value=code)
+        ws.cell(row=CHART_HEADER_ROW, column=col, value=name)
+    for col in range(2, last_col + 1):
+        code = ws.cell(row=CHART_CODE_ROW, column=col)
+        code.font = SOURCE_FONT
+        code.fill = WORKING_FILL
+        header = ws.cell(row=CHART_HEADER_ROW, column=col)
+        header.font = HEADER_FONT
+        header.fill = HEADER_FILL
+        header.alignment = Alignment(horizontal="left" if col == 2 else "right", vertical="center")
+    for row in (CHART_LABEL_ROW, CHART_CODE_ROW):
+        ws.row_dimensions[row].height = LINE_HEIGHT_PT
+    ws.row_dimensions[CHART_HEADER_ROW].height = BODY_HEIGHT
+
+    first_row = CHART_HEADER_ROW + 1
+    last_row = first_row + CHART_MONTHS - 1
+    for i, r in enumerate(range(first_row, last_row + 1)):
+        ws.row_dimensions[r].height = WORKING_ROW_HEIGHT
+        month = ws.cell(row=r, column=2, value=f"=EDATE(ReportMonth,{i - (CHART_MONTHS - 1)})")
+        month.number_format = MONTH_FORMAT
+        for col in range(2, last_col + 1):
+            cell = ws.cell(row=r, column=col)
+            cell.font = WORKING_FONT
+            cell.fill = WORKING_FILL
+            if col > 2:
+                letter = get_column_letter(col)
+                # NA() rather than "": a line chart plots text as zero, but leaves #N/A out.
+                cell.value = _lookup(f"{letter}${CHART_CODE_ROW}", "ChartIndicator", f"$B{r}", missing="NA()")
+                cell.number_format = VALUE_FORMAT
+    values = f"C{first_row}:{get_column_letter(last_col)}{last_row}"
+    ws.conditional_formatting.add(
+        values, FormulaRule(formula=[f"ISNA(C{first_row})"], font=Font(color=BENCHMARK_COLOUR))
+    )
+
+    ws.column_dimensions["A"].width = 2
+    ws.column_dimensions["B"].width = CHART_LABEL_WIDTH
+    for col in range(first_col, last_col + 1):
+        ws.column_dimensions[get_column_letter(col)].width = CHART_VALUE_WIDTH
+    # The chart spans exactly the printed columns, so the print area that holds the working
+    # data also holds the chart, and that width must fit the page without shrinking.
+    columns_cm = sum(column_width_cm(ws.column_dimensions[get_column_letter(c)].width)
+                     for c in range(2, last_col + 1))
+    if columns_cm > printable_width_cm():
+        raise ValueError(f"Chart sheet is {columns_cm:.1f} cm wide, the page prints {printable_width_cm():.1f} cm")
+
+    chart = LineChart()
+    chart.width, chart.height = columns_cm, CHART_HEIGHT_CM
+    chart.add_data(
+        Reference(ws, min_col=first_col, max_col=last_col, min_row=CHART_HEADER_ROW, max_row=last_row),
+        titles_from_data=True,
+    )
+    chart.x_axis = DateAxis(crossAx=100)
+    chart.y_axis.crossAx = 500
+    chart.set_categories(Reference(ws, min_col=2, min_row=first_row, max_row=last_row))
+    for series, (code, _) in zip(chart.series, geos):
+        series.graphicalProperties = _line(geo_colour(code), CHART_LINE_PT)
+        series.marker.symbol = "none"
+        series.smooth = False
+    chart.title = None
+    chart.legend.position = "t"
+    chart.legend.txPr = _text_properties(FOREGROUND, 10)
+    chart.display_blanks = "gap"
+    chart.x_axis.number_format = "mmm yy"
+    chart.x_axis.majorTimeUnit = "months"
+    chart.x_axis.majorUnit = 6
+    chart.x_axis.majorGridlines = None
+    chart.y_axis.majorGridlines = ChartLines(spPr=_line(GRIDLINE, 0.75))
+    chart.y_axis.number_format = "#,##0"
+    chart.y_axis.title = Title(
+        tx=Text(strRef=StrRef(f"'Chart'!{absolute_coordinate(CHART_UNIT_CELL)}")),
+        overlay=False,
+        txPr=_text_properties(LABEL, 10),
+    )
+    for axis in (chart.x_axis, chart.y_axis):
+        # openpyxl 3.1 writes delete="1" by default, which hides both axes in current Excel.
+        axis.delete = False
+        axis.txPr = _text_properties(LABEL, 10)
+        axis.spPr = _line(AXIS_LINE, 0.75)
+    ws.add_chart(chart, CHART_ANCHOR)
+
+    _set_up_page(ws, get_column_letter(last_col), last_row, landscape=True)
+    # Chart on the first page, working data on the second.
+    ws.row_breaks.append(Break(id=CHART_LABEL_ROW - 1))
+    block_height = sum(ws.row_dimensions[r].height for r in range(CHART_LABEL_ROW, last_row + 1))
+    if block_height > printable_height_pt():
+        raise ValueError(f"working data is {block_height:.0f} pt tall, a page holds {printable_height_pt():.0f} pt")
+    _define(wb, "ChartIndicator", "Chart", "$C$3")
+
+
 def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     if df.empty:
         raise ValueError("briefing frame is empty")
@@ -518,6 +757,7 @@ def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     wb = Workbook()
     briefing = wb.active
     briefing.title = "Briefing"
+    _write_chart_sheet(wb, df)
     _write_settings(wb, df)
     _write_data(wb, df)
     _write_months(wb, months)
@@ -537,13 +777,27 @@ def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     return wb
 
 
+def months_to_cover_chart(df: pd.DataFrame) -> int:
+    """Months of history, counted back from the newest month, that the chart's window needs."""
+    latest = pd.Timestamp(df["month"].max())
+    start = default_report_month(df) - pd.DateOffset(months=CHART_MONTHS - 1)
+    return (latest.year - start.year) * 12 + latest.month - start.month + 1
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Build the monthly briefing workbook")
-    parser.add_argument("--months", type=int, default=36, help="months of history in the Data sheet (default 36)")
+    parser.add_argument(
+        "--months", type=int, default=DEFAULT_MONTHS,
+        help=f"months of history in the Data sheet (default {DEFAULT_MONTHS}, extended if the chart needs more)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help=f"output workbook (default {DEFAULT_OUT})")
     args = parser.parse_args(argv)
 
     df = fetch_briefing_frame(args.months)
+    needed = months_to_cover_chart(df)
+    if needed > args.months:
+        print(f"fetching {needed} months so the chart's {CHART_MONTHS}-month window is covered", file=sys.stderr)
+        df = fetch_briefing_frame(needed)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     build_workbook(df).save(args.out)
     print(f"{args.out}: {len(df)} data rows, report month {default_report_month(df):%b %Y}")

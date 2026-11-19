@@ -1,5 +1,7 @@
 import re
+import zipfile
 from datetime import date
+from xml.etree import ElementTree
 
 import pandas as pd
 import pytest
@@ -8,9 +10,17 @@ from openpyxl import load_workbook
 from src.report.build_workbook import (
     HEADER_MAX_LINES,
     NUMBER_COLUMN_WIDTH,
+    CHAR_WIDTH_FACTOR,
     COPYRIGHT_URL,
+    DEFAULT_MONTHS,
+    GEO_COLOURS,
     build_workbook,
+    column_width_cm,
+    main,
     month_on_month_thresholds,
+    months_to_cover_chart,
+    printable_height_pt,
+    printable_width_cm,
     usable_page_height,
     wrapped_lines,
 )
@@ -51,8 +61,15 @@ def frame() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="module")
-def workbook(frame, tmp_path_factory):
-    return _save(frame, tmp_path_factory.mktemp("wb") / "briefing.xlsx")
+def saved(frame, tmp_path_factory):
+    path = tmp_path_factory.mktemp("wb") / "briefing.xlsx"
+    build_workbook(frame, generated=date(2026, 4, 2)).save(path)
+    return path
+
+
+@pytest.fixture(scope="module")
+def workbook(saved):
+    return load_workbook(saved)
 
 
 def _blocks(ws):
@@ -62,9 +79,9 @@ def _blocks(ws):
 
 
 def test_sheet_order_and_visibility(workbook):
-    assert workbook.sheetnames == ["Briefing", "Settings", "Data", "Months", "Notes"]
+    assert workbook.sheetnames == ["Briefing", "Chart", "Settings", "Data", "Months", "Notes"]
     assert [ws.sheet_state for ws in workbook.worksheets] == [
-        "visible", "visible", "hidden", "hidden", "visible"
+        "visible", "visible", "visible", "hidden", "hidden", "visible"
     ]
     assert workbook.active.title == "Briefing"
 
@@ -229,7 +246,8 @@ def test_licence_wording(workbook):
     assert COPYRIGHT_URL in licence
 
 
-def test_licence_names_geographies_outside_eu_and_efta(frame):
+def test_licence_names_geographies_outside_eu_and_efta(frame, monkeypatch):
+    monkeypatch.setitem(GEO_COLOURS, "US", "000000")
     with_us = frame.replace({"geo_code": {"PL": "US"}, "geo_name": {"Poland": "United States"}})
     ws = build_workbook(with_us)["Notes"]
     rows = [c.value for row in ws.iter_rows(min_col=2, max_col=2) for c in row]
@@ -277,6 +295,173 @@ def test_large_changes_flagged_from_settings(workbook):
         assert rule.dxf.font.b
     year_columns = [r for r in rules if r.startswith("G")]
     assert not year_columns
+
+
+CHART_COLOURS = {
+    "Germany": "0072B2", "France": "D55E00", "Italy": "009E73",
+    "Netherlands": "7B52AB", "Poland": "E69F00", "Euro area": "9AA5B1",
+}
+NS = {
+    "c": "http://schemas.openxmlformats.org/drawingml/2006/chart",
+    "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+}
+
+
+def _chart_xml(path):
+    # openpyxl drops charts when it loads a workbook, so read the chart part directly.
+    with zipfile.ZipFile(path) as z:
+        (name,) = [n for n in z.namelist() if n.startswith("xl/charts/chart")]
+        return ElementTree.fromstring(z.read(name))
+
+
+def _helper_block(ws):
+    header = next(r for r in range(1, ws.max_row + 1) if ws.cell(row=r, column=2).value == "Month")
+    return header, range(header + 1, ws.max_row + 1), range(3, ws.max_column + 1)
+
+
+def test_chart_indicator_is_a_named_dropdown_defaulting_to_unemployment(workbook):
+    assert workbook.defined_names["ChartIndicator"].attr_text == "Chart!$C$3"
+    ws = workbook["Chart"]
+    assert ws["C3"].value == "Unemployment"
+    validations = ws.data_validations.dataValidation
+    assert any(v.type == "list" and v.formula1 == "=IndicatorList" and "C3" in str(v.sqref) for v in validations)
+    assert workbook.defined_names["IndicatorList"].attr_text == f"Settings!$A$2:$A${len(INDICATORS) + 1}"
+
+
+def test_chart_title_is_the_indicator_alone(workbook):
+    ws = workbook["Chart"]
+    assert ws["B1"].value == "=ChartIndicator"
+    assert ws["B5"].value == "Unit"
+    assert "DataUnit" in ws["C5"].value and "ChartIndicator" in ws["C5"].value
+
+
+def test_value_axis_title_carries_the_unit(saved):
+    root = _chart_xml(saved)
+    value_axis, date_axis = root.find(".//c:valAx", NS), root.find(".//c:dateAx", NS)
+    assert value_axis.find("c:title/c:tx/c:strRef/c:f", NS).text == "'Chart'!$C$5"
+    assert value_axis.find("c:title/c:overlay", NS).get("val") == "0"
+    assert date_axis.find("c:title", NS) is None
+    assert root.find("c:chart/c:title", NS) is None
+
+
+def _drawing(saved):
+    with zipfile.ZipFile(saved) as z:
+        (drawing,) = [n for n in z.namelist() if n.startswith("xl/drawings/drawing")]
+        return ElementTree.fromstring(z.read(drawing))
+
+
+XDR = "{http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing}"
+
+
+def test_chart_sheet_page_setup(workbook, saved):
+    ws = workbook["Chart"]
+    _, rows, cols = _helper_block(ws)
+    assert ws.page_setup.orientation == "landscape"
+    assert ws.page_setup.fitToWidth == 1 and ws.page_setup.fitToHeight == 0
+    assert ws.sheet_properties.pageSetUpPr.fitToPage
+    assert str(ws.print_area) == f"'Chart'!$B$1:$H${rows[-1]}"
+    # The chart's anchored width matches the printed columns and fits the page unscaled.
+    columns_cm = sum(column_width_cm(ws.column_dimensions[c].width) for c in "BCDEFGH")
+    chart_cm = int(_drawing(saved).find(f".//{XDR}ext").get("cx")) / 360000
+    assert chart_cm == pytest.approx(columns_cm, abs=0.01)
+    assert chart_cm <= printable_width_cm()
+    # Chart on page one, working data on page two, which it fits.
+    label_row = next(r for r in range(1, rows[0]) if str(ws.cell(row=r, column=2).value).startswith("Working data"))
+    assert [b.id for b in ws.row_breaks.brk] == [label_row - 1]
+    assert sum(ws.row_dimensions[r].height for r in range(label_row, rows[-1] + 1)) <= printable_height_pt()
+
+
+def test_chart_labels_fit_their_column(workbook):
+    ws = workbook["Chart"]
+    assert ws.column_dimensions["B"].width >= len("Report month") * CHAR_WIDTH_FACTOR
+
+
+def test_helper_block_is_36_by_6_formulas(workbook):
+    ws = workbook["Chart"]
+    header, rows, cols = _helper_block(ws)
+    assert len(rows) == 36 and len(cols) == 6
+    assert [ws.cell(row=header, column=c).value for c in cols] == list(CHART_COLOURS)
+    assert ws.cell(row=rows[-1], column=2).value == "=EDATE(ReportMonth,0)"
+    assert ws.cell(row=rows[0], column=2).value == "=EDATE(ReportMonth,-35)"
+    for r in rows:
+        for c in cols:
+            value = ws.cell(row=r, column=c).value
+            assert value.startswith("=IFERROR(INDEX(DataValue,MATCH(") and "ChartIndicator" in value
+    assert ws.sheet_state == "visible"
+    assert not any(ws.row_dimensions[r].hidden for r in rows)
+    assert ws.cell(row=rows[0], column=3).fill.fgColor.rgb.endswith("F6F7F9")
+    assert any(str(ws.cell(row=r, column=2).value).startswith("Working data") for r in range(1, header))
+
+
+def test_chart_sits_above_helper_block(workbook, saved):
+    with zipfile.ZipFile(saved) as z:
+        (drawing,) = [n for n in z.namelist() if n.startswith("xl/drawings/drawing")]
+        root = ElementTree.fromstring(z.read(drawing))
+    xdr = "{http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing}"
+    anchor_row = int(root.find(f".//{xdr}from/{xdr}row").text) + 1
+    header, _, _ = _helper_block(workbook["Chart"])
+    chart_height_rows = 11.5 / 2.54 * 72 / 15
+    assert anchor_row + chart_height_rows < header - 2
+
+
+def test_chart_has_six_coloured_series_reading_the_helper_block(workbook, saved):
+    root = _chart_xml(saved)
+    series = root.findall(".//c:lineChart/c:ser", NS)
+    assert len(series) == 6
+    header, rows, _ = _helper_block(workbook["Chart"])
+    for ser, (name, colour), col in zip(series, CHART_COLOURS.items(), "CDEFGH"):
+        ref = lambda path: ser.find(path, NS).text.replace("$", "")
+        assert ref("c:tx/c:strRef/c:f") == f"'Chart'!{col}{header}"
+        assert ref("c:val/c:numRef/c:f") == f"'Chart'!{col}{rows[0]}:{col}{rows[-1]}"
+        assert ref("c:cat/c:numRef/c:f") == f"'Chart'!B{rows[0]}:B{rows[-1]}"
+        line = ser.find("c:spPr/a:ln", NS)
+        assert line.find("a:solidFill/a:srgbClr", NS).get("val") == colour, name
+        assert int(line.get("w")) == 2 * 12700
+        assert ser.find("c:marker/c:symbol", NS).get("val") == "none"
+
+
+def test_chart_legend_axes_and_gridlines(saved):
+    root = _chart_xml(saved)
+    assert root.find(".//c:legend/c:legendPos", NS).get("val") == "t"
+    date_axis, value_axis = root.find(".//c:dateAx", NS), root.find(".//c:valAx", NS)
+    assert date_axis.find("c:majorGridlines", NS) is None
+    assert value_axis.find("c:majorGridlines", NS) is not None
+    for axis in (date_axis, value_axis):
+        assert axis.find("c:delete", NS).get("val") == "0"
+        assert axis.find(".//a:defRPr/a:solidFill/a:srgbClr", NS).get("val") == "4A5568"
+
+
+def _lagging(frame, months):
+    late = frame["month"].isin(MONTHS[-months:])
+    return frame[~((frame["indicator_label"] == "HICP") & late)] if months else frame
+
+
+@pytest.mark.parametrize("lag, needed", [(0, 36), (1, 37), (2, 38)])
+def test_months_to_cover_chart(frame, lag, needed):
+    assert months_to_cover_chart(_lagging(frame, lag)) == needed
+
+
+def test_default_extract_is_37_months():
+    assert DEFAULT_MONTHS == 37
+
+
+@pytest.mark.parametrize("lag, calls", [(1, [37]), (2, [37, 38])])
+def test_main_fetches_enough_months_for_the_chart(frame, lag, calls, tmp_path, monkeypatch):
+    requested = []
+
+    def fake_fetch(months):
+        requested.append(months)
+        return _lagging(frame, lag)
+
+    monkeypatch.setattr("src.report.build_workbook.fetch_briefing_frame", fake_fetch)
+    main(["--out", str(tmp_path / "out.xlsx")])
+    assert requested == calls
+
+
+def test_unknown_country_needs_a_colour(frame):
+    other = frame.replace({"geo_code": {"PL": "ES"}, "geo_name": {"Poland": "Spain"}})
+    with pytest.raises(ValueError, match="GEO_COLOURS"):
+        build_workbook(other)
 
 
 def test_rejects_wildcard_characters_in_keys(frame):

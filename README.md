@@ -28,9 +28,12 @@ cloud credentials.
 
 ![Briefing sheet](docs/briefing.png)
 
+![Chart sheet](docs/briefing-chart.png)
+
 Python writes a hidden data sheet; every visible number is an INDEX/MATCH formula keyed on
-a report month cell, so changing the month recalculates the sheet. Thresholds on a Settings
-sheet are editable, and conditional formatting flags month-on-month moves beyond them.
+a report month cell, so changing the month recalculates the sheet and the chart. Thresholds
+on a Settings sheet are editable, and conditional formatting flags month-on-month moves
+beyond them. Country colours match the report.
 
 ```bash
 python -m src.report.build_workbook
