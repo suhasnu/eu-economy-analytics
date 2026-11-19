@@ -137,6 +137,16 @@ cultureInfo de-DE
 			            },
 			            "Weight": 0.9
 			          }
+			        },
+			        {
+			          "Latest month published": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -172,6 +182,69 @@ cultureInfo de-DE
 			      "Terms": [
 			        {
 			          "Change vs a year earlier": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_series.indicator_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_series",
+			          "ConceptualProperty": "indicator_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Indicator": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_series.unit_short_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_series",
+			          "ConceptualProperty": "unit_short_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Unit": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_series.aggregation_description": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_series",
+			          "ConceptualProperty": "aggregation_description"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "How it may be combined": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

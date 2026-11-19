@@ -1,0 +1,81 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "methodCaveats",
+  "position": {
+    "x": 848,
+    "y": 114,
+    "z": 30,
+    "width": 416,
+    "height": 250,
+    "tabOrder": 300
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "What to watch",
+                    "textStyle": {
+                      "fontSize": "13pt",
+                      "color": "#0072B2",
+                      "fontWeight": "bold"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Rates change in percentage points, indices in points. Neither is a percentage change.",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "The euro area is EA21 at fixed composition, so the series stays continuous.",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Unemployment is the Eurostat harmonised rate, lower than the Bundesagentur figure.",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Indicators publish on different schedules, so each carries its own month.",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#1B2733"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

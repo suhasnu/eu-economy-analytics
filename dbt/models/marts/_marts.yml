@@ -70,6 +70,13 @@ models:
           - accepted_values:
               arguments:
                 values: [none, sum]
+      - name: aggregation_short
+        description: The aggregation rule as a report-table heading. Capped at 45 characters so the reasoning stays in aggregation_description.
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "is not null and length(aggregation_short) <= 45"
       - name: aggregation_description
         data_tests: [not_null]
       - name: varies_in

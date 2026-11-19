@@ -168,6 +168,7 @@ select
     ) as is_headline,
     r.unit_kind,
     r.aggregation,
+    r.aggregation_short,
     r.aggregation_description,
     s.varies_in,
     case when s.varies_in = 'headline' then 'Headline' else vl.label end as varies_in_label
