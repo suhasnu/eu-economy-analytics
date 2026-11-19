@@ -4,6 +4,7 @@ Briefing  the one visible sheet: ReportMonth, then one block per indicator of
           INDEX/MATCH formulas, so picking another ReportMonth recalculates everything
 Data      hidden, the frame plus a key column, referenced through DataKey and DataValue
 Months    hidden, the months in the data, the list ReportMonth is validated against
+Notes     visible, plain prose on sources, units, release timing and regeneration
 
 Colours and fonts follow powerbi/theme/eu-economy-theme.json.
 """
@@ -21,6 +22,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.pagebreak import Break
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -28,7 +30,6 @@ from src.report.extract import fetch_briefing_frame
 
 DEFAULT_OUT = Path("build/eu-economy-briefing.xlsx")
 TITLE = "EU economy monthly briefing"
-SOURCE = "Source: Eurostat, via the eu-economy dbt marts"
 
 DATA_COLUMNS = ["geo_code", "geo_name", "indicator_label", "unit_kind", "unit_short_label", "month", "value"]
 REPORT_MONTH_CELL = "C3"
@@ -65,12 +66,26 @@ SOURCE_FONT = Font(name=FONT_FACE, size=10, color=LABEL)
 HEADER_FILL = PatternFill("solid", fgColor=ACCENT)
 BAND_FILL = PatternFill("solid", fgColor=BAND)
 ROW_RULE = Border(bottom=Side(style="thin", color=RULE))
+WRAP = Alignment(wrap_text=True, vertical="top")
 
 # Width in Excel character units for C:G; headers wrap within it instead of widening the page.
-NUMBER_COLUMN_WIDTH = 17
+NUMBER_COLUMN_WIDTH = 19
+NOTES_COLUMN_WIDTH = 90
 # Segoe UI runs a little wider than the Calibri metrics Excel sizes columns by.
 CHAR_WIDTH_FACTOR = 1.15
 LINE_HEIGHT_PT = 15
+
+# Every Briefing row gets an explicit height: Excel does not re-fit row heights for
+# wrapped text in a file it did not write, and the page breaks are computed from these.
+TITLE_ROW_HEIGHTS = {1: 24, 2: 12, 3: 18, 4: 16}
+SPACER_HEIGHT = 15
+HEADING_HEIGHT = 22
+BODY_HEIGHT = 18
+HEADER_MAX_LINES = 2
+
+A4_SHORT_SIDE_IN = 8.27
+MARGIN_SIDE_IN = 0.5
+MARGIN_TOP_BOTTOM_IN = 0.6
 
 
 def block_headers(unit: str, change_unit: str) -> list[str]:
@@ -78,10 +93,24 @@ def block_headers(unit: str, change_unit: str) -> list[str]:
         "Geography",
         f"Latest ({unit})",
         "Previous month",
-        f"Change vs previous month ({change_unit})",
-        "Same month a year earlier",
-        f"Change vs a year earlier ({change_unit})",
+        f"vs previous month ({change_unit})",
+        "Year earlier",
+        f"vs year earlier ({change_unit})",
     ]
+
+
+def wrapped_lines(text: str, width: float) -> int:
+    """Lines Excel needs to show `text` wrapped at word boundaries in a column `width` wide."""
+    capacity = (width - 1) / CHAR_WIDTH_FACTOR
+    lines, used = 0, None
+    for word in text.split():
+        if used is not None and used + 1 + len(word) <= capacity:
+            used += 1 + len(word)
+        else:
+            spans = math.ceil(len(word) / capacity)
+            lines += spans
+            used = len(word) - (spans - 1) * capacity
+    return max(lines, 1)
 
 
 def _month_key(offset: int) -> str:
@@ -168,16 +197,14 @@ def _write_title(ws: Worksheet, report_month: pd.Timestamp, generated: date) -> 
     )
     ws.add_data_validation(validation)
     validation.add(REPORT_MONTH_CELL)
-    ws["B4"] = f"{SOURCE}. Generated {generated:%d %b %Y}."
+    ws["B4"] = f"Source: Eurostat. Built from the project's dbt marts, generated {generated:%d %b %Y}."
     ws["B4"].font = SOURCE_FONT
+    for row, height in TITLE_ROW_HEIGHTS.items():
+        ws.row_dimensions[row].height = height
 
 
-def _header_lines(text: str, width: int) -> int:
-    return math.ceil(len(text) * CHAR_WIDTH_FACTOR / (width - 1))
-
-
-def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> int:
-    """Write one block per indicator and return the last row used."""
+def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> list[range]:
+    """Write one block per indicator and return each block's rows, heading to last geography."""
     # Column A carries the lookup keys (indicator_label on heading rows, geo_code on
     # geography rows) so the formulas reference cells instead of quoted literals.
     geos = df[["geo_code", "geo_name"]].drop_duplicates().sort_values("geo_code")
@@ -187,13 +214,19 @@ def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> int:
         .sort_values("indicator_label")
     )
 
+    blocks = []
     row = FIRST_BLOCK_ROW
     for indicator in indicators.itertuples(index=False):
+        ws.row_dimensions[row - 1].height = SPACER_HEIGHT
         heading_row, header_row = row, row + 1
         ws.cell(row=heading_row, column=1, value=indicator.indicator_label)
         ws.cell(row=heading_row, column=2, value=indicator.indicator_label).font = HEADING_FONT
+        ws.row_dimensions[heading_row].height = HEADING_HEIGHT
 
         headers = block_headers(indicator.unit_short_label, CHANGE_UNITS[indicator.unit_kind])
+        lines = max(wrapped_lines(text, NUMBER_COLUMN_WIDTH) for text in headers[1:])
+        if lines > HEADER_MAX_LINES:
+            raise ValueError(f"headers for {indicator.indicator_label} need {lines} lines: {headers}")
         for col, text in enumerate(headers, start=2):
             cell = ws.cell(row=header_row, column=col, value=text)
             cell.font = HEADER_FONT
@@ -201,13 +234,13 @@ def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> int:
             cell.alignment = Alignment(
                 horizontal="left" if col == 2 else "right", vertical="center", wrap_text=True
             )
-        lines = max(_header_lines(text, NUMBER_COLUMN_WIDTH) for text in headers[1:])
-        ws.row_dimensions[header_row].height = lines * LINE_HEIGHT_PT + 6
+        ws.row_dimensions[header_row].height = HEADER_MAX_LINES * LINE_HEIGHT_PT + 6
 
         indicator_cell = f"$A${heading_row}"
         for i, geo in enumerate(geos.itertuples(index=False)):
             r = header_row + 1 + i
             geo_cell = f"$A{r}"
+            ws.row_dimensions[r].height = BODY_HEIGHT
             ws.cell(row=r, column=1, value=geo.geo_code)
             ws.cell(row=r, column=2, value=geo.geo_name)
             ws.cell(row=r, column=3, value=_lookup(geo_cell, indicator_cell, 0))
@@ -223,8 +256,35 @@ def _write_blocks(ws: Worksheet, df: pd.DataFrame) -> int:
                     cell.fill = BAND_FILL
                 if col > 2:
                     cell.number_format = CHANGE_FORMAT if col in CHANGE_COLUMNS else VALUE_FORMAT
-        row = header_row + 1 + len(geos) + 1
-    return row - 2
+        last_geo_row = header_row + len(geos)
+        blocks.append(range(heading_row, last_geo_row + 1))
+        row = last_geo_row + 2
+    return blocks
+
+
+def usable_page_height() -> float:
+    """Printable height of a landscape A4 page in points, less the repeated title rows."""
+    printable = (A4_SHORT_SIDE_IN - 2 * MARGIN_TOP_BOTTOM_IN) * 72
+    return printable - sum(TITLE_ROW_HEIGHTS.values())
+
+
+def _break_pages(ws: Worksheet, blocks: list[range]) -> None:
+    # Heights are measured at 100% scale. Fit-to-width only ever shrinks the sheet, so a
+    # page that holds these rows at 100% still holds them when printed.
+    def height(rows: range) -> float:
+        return sum(ws.row_dimensions[r].height for r in rows)
+
+    available = usable_page_height()
+    used = 0.0
+    for i, block in enumerate(blocks):
+        spacer = range(block.start - 1, block.start)
+        needed = height(spacer) + height(block)
+        if used and used + needed > available:
+            # Break after the previous block, so the spacer row opens the new page
+            # instead of spilling onto it as a page of its own.
+            ws.row_breaks.append(Break(id=blocks[i - 1].stop - 1))
+            used = 0.0
+        used += needed
 
 
 def _size_columns(ws: Worksheet, df: pd.DataFrame) -> None:
@@ -237,20 +297,99 @@ def _size_columns(ws: Worksheet, df: pd.DataFrame) -> None:
         ws.column_dimensions[col].width = NUMBER_COLUMN_WIDTH
 
 
-def _set_up_page(ws: Worksheet, last_row: int) -> None:
+def _set_up_page(ws: Worksheet, last_column: str, last_row: int, landscape: bool) -> None:
     ws.sheet_view.showGridLines = False
-    ws.freeze_panes = f"A{TITLE_ROWS + 1}"
-    ws.print_area = f"B1:{LAST_COLUMN}{last_row}"
-    ws.print_title_rows = f"1:{TITLE_ROWS}"
-    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.print_area = f"B1:{last_column}{last_row}"
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE if landscape else ws.ORIENTATION_PORTRAIT
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
     ws.sheet_properties.pageSetUpPr.fitToPage = True
-    ws.print_options.horizontalCentered = True
-    ws.page_margins.left = ws.page_margins.right = 0.5
-    ws.page_margins.top = ws.page_margins.bottom = 0.6
+    ws.page_margins.left = ws.page_margins.right = MARGIN_SIDE_IN
+    ws.page_margins.top = ws.page_margins.bottom = MARGIN_TOP_BOTTOM_IN
     ws.page_margins.header = ws.page_margins.footer = 0.3
+
+
+def notes_sections(df: pd.DataFrame) -> list[tuple[str, str]]:
+    indicators = sorted(df["indicator_label"].unique())
+    n = len(indicators)
+    return [
+        (
+            "Where the data comes from",
+            "Every figure is a monthly statistic published by Eurostat, the statistical office of "
+            "the European Union, taken from its public dissemination API. The briefing uses the "
+            f"headline series of {n} indicators: {'; '.join(indicators)}. Figures are shown as "
+            "Eurostat published them on the date this file was generated; later revisions by "
+            "Eurostat are not reflected until the file is regenerated.",
+        ),
+        (
+            "Licence",
+            "Eurostat data may be reused free of charge, for commercial and non-commercial purposes, "
+            "under the European Commission's reuse policy (Decision 2011/833/EU) and the Creative "
+            "Commons Attribution 4.0 licence (CC BY 4.0). The condition is that the source is "
+            "acknowledged: Source: Eurostat. Any copy or extract of this briefing should keep that "
+            "acknowledgement.",
+        ),
+        (
+            "Units of the change columns",
+            "The change columns are plain differences between two published values, never "
+            "percentages. For rates and ratios, such as the HICP annual rate of change and the "
+            "unemployment rate, the difference is in percentage points (pp): unemployment moving "
+            "from 6.0% to 6.3% is a rise of 0.3 pp, which is also a relative rise of 5%, so the "
+            "two must not be confused. For index levels (2021 = 100) and survey balances, the "
+            "difference is in points of that scale. An index rising from 105.0 to 107.1 has risen "
+            "2.1 points, which is a 2.0% increase; points and percent agree only when the earlier "
+            "level is exactly 100. A survey balance is the share of positive answers minus the "
+            "share of negative ones, so its change is in balance points.",
+        ),
+        (
+            "Why the report month can trail the newest data",
+            "Eurostat publishes each indicator on its own schedule. Survey results and inflation "
+            "figures appear soon after the month ends, while production, retail trade and labour "
+            f"market figures follow some weeks later. The report month therefore opens on the "
+            f"latest month for which all {n} indicators have been published, so every block shows "
+            "figures. Newer months for the faster indicators remain available in the dropdown.",
+        ),
+        (
+            "Why one cell can be empty",
+            "Eurostat compiles the euro area aggregate from its members' national data and can "
+            "publish it later than some of the members. In a given month a country can therefore "
+            "show a value while the euro area row is still blank. A blank cell means the figure "
+            "was not yet published when the file was generated; it does not mean zero. The change "
+            "columns are blank whenever either of the two values they compare is missing.",
+        ),
+        (
+            "Changing the report month and regenerating the file",
+            "To look at another month, select the Report month cell on the Briefing sheet and pick "
+            "a month from its dropdown; every figure on the sheet recalculates. Only months "
+            "present in the data are offered. To bring in newly published data, refresh the "
+            "project's dbt marts and then regenerate the workbook from the project directory with "
+            "python -m src.report.build_workbook, which writes build/eu-economy-briefing.xlsx. "
+            "It reads from BigQuery when BQ_PROJECT and BQ_DBT_DATASET are set and from the local "
+            "DuckDB copy otherwise; --months sets how many months of history are included "
+            "(36 by default).",
+        ),
+    ]
+
+
+def _write_notes(wb: Workbook, df: pd.DataFrame) -> None:
+    ws = wb.create_sheet("Notes")
+    ws.sheet_view.showGridLines = False
+    ws.column_dimensions["A"].width = 2
+    ws.column_dimensions["B"].width = NOTES_COLUMN_WIDTH
+    ws["B1"] = "Notes"
+    ws["B1"].font = TITLE_FONT
+    ws.row_dimensions[1].height = TITLE_ROW_HEIGHTS[1]
+    row = 3
+    for heading, text in notes_sections(df):
+        ws.cell(row=row, column=2, value=heading).font = HEADING_FONT
+        ws.row_dimensions[row].height = HEADING_HEIGHT
+        body = ws.cell(row=row + 1, column=2, value=text)
+        body.font = BODY_FONT
+        body.alignment = WRAP
+        ws.row_dimensions[row + 1].height = wrapped_lines(text, NOTES_COLUMN_WIDTH) * LINE_HEIGHT_PT + 4
+        row += 3
+    _set_up_page(ws, "B", row - 2, landscape=False)
 
 
 def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
@@ -265,9 +404,14 @@ def build_workbook(df: pd.DataFrame, generated: date | None = None) -> Workbook:
     _write_data(wb, df)
     _write_months(wb, months)
     _write_title(briefing, default_report_month(df), generated or date.today())
-    last_row = _write_blocks(briefing, df)
+    blocks = _write_blocks(briefing, df)
     _size_columns(briefing, df)
-    _set_up_page(briefing, last_row)
+    _set_up_page(briefing, LAST_COLUMN, blocks[-1].stop - 1, landscape=True)
+    briefing.freeze_panes = f"A{TITLE_ROWS + 1}"
+    briefing.print_title_rows = f"1:{TITLE_ROWS}"
+    briefing.print_options.horizontalCentered = True
+    _break_pages(briefing, blocks)
+    _write_notes(wb, df)
     _define(wb, "ReportMonth", "Briefing", "$C$3")
     # openpyxl stores formulas without cached results; this makes Excel compute them on open.
     wb.calculation.fullCalcOnLoad = True

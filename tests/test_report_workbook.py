@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 from openpyxl import load_workbook
 
-from src.report.build_workbook import build_workbook
+from src.report.build_workbook import (
+    HEADER_MAX_LINES,
+    NUMBER_COLUMN_WIDTH,
+    build_workbook,
+    usable_page_height,
+    wrapped_lines,
+)
 from src.schemas.exports import BriefingSchema
 
 GEOS = {"DE": "Germany", "EA21": "Euro area", "FR": "France", "IT": "Italy", "NL": "Netherlands", "PL": "Poland"}
@@ -52,9 +58,10 @@ def _blocks(ws):
     return [(h - 1, h, range(h + 1, h + 1 + len(GEOS))) for h in header_rows]
 
 
-def test_three_sheets_with_only_briefing_visible(workbook):
-    assert workbook.sheetnames == ["Briefing", "Data", "Months"]
-    assert [ws.sheet_state for ws in workbook.worksheets] == ["visible", "hidden", "hidden"]
+def test_sheet_order_and_visibility(workbook):
+    assert workbook.sheetnames == ["Briefing", "Data", "Months", "Notes"]
+    assert [ws.sheet_state for ws in workbook.worksheets] == ["visible", "hidden", "hidden", "visible"]
+    assert workbook.active.title == "Briefing"
 
 
 def test_defined_names(workbook):
@@ -106,7 +113,7 @@ def test_five_blocks_of_six_formula_rows(workbook):
 def test_change_columns_are_formulas(workbook):
     ws = workbook["Briefing"]
     for _, header, rows in _blocks(ws):
-        cols = [c for c in VALUE_COLUMNS if str(ws.cell(row=header, column=c).value).startswith("Change vs")]
+        cols = [c for c in VALUE_COLUMNS if str(ws.cell(row=header, column=c).value).startswith("vs ")]
         assert cols == list(CHANGE_COLUMNS)
         for r in rows:
             for c in cols:
@@ -118,9 +125,30 @@ def test_headings_are_label_alone_and_unit_is_in_headers(workbook):
     for heading, header, _ in _blocks(ws):
         label = ws.cell(row=heading, column=2).value
         kind, unit = INDICATORS[label]
-        assert ws.cell(row=header, column=3).value == f"Latest ({unit})"
         change_unit = "pp" if kind in ("rate of change", "ratio") else "points"
-        assert ws.cell(row=header, column=5).value.endswith(f"({change_unit})")
+        assert [ws.cell(row=header, column=c).value for c in range(2, 8)] == [
+            "Geography",
+            f"Latest ({unit})",
+            "Previous month",
+            f"vs previous month ({change_unit})",
+            "Year earlier",
+            f"vs year earlier ({change_unit})",
+        ]
+
+
+def test_headers_fit_two_lines(workbook):
+    ws = workbook["Briefing"]
+    for _, header, _ in _blocks(ws):
+        for c in VALUE_COLUMNS:
+            assert wrapped_lines(ws.cell(row=header, column=c).value, NUMBER_COLUMN_WIDTH) <= HEADER_MAX_LINES
+        assert ws.row_dimensions[header].height < 3 * 15
+
+
+def test_wrapped_lines():
+    assert wrapped_lines("Previous month", 19) == 1
+    assert wrapped_lines("vs previous month (points)", 19) == 2
+    assert wrapped_lines("vs previous month (points)", 12) == 4
+    assert wrapped_lines("x" * 30, 12) == 4
 
 
 def test_every_value_and_change_cell_has_a_number_format(workbook):
@@ -142,6 +170,42 @@ def test_page_setup(workbook):
     assert ws.page_setup.fitToWidth == 1 and ws.page_setup.fitToHeight == 0
     assert ws.sheet_properties.pageSetUpPr.fitToPage
     assert str(ws.print_area).endswith(f"$G${_blocks(ws)[-1][2][-1]}")
+
+
+def test_no_block_splits_across_pages(workbook):
+    ws = workbook["Briefing"]
+    blocks = _blocks(ws)
+    last_rows = [rows[-1] for _, _, rows in blocks]
+    breaks = [b.id for b in ws.row_breaks.brk]
+    assert breaks, "five blocks do not fit one landscape page, so a break is expected"
+    assert set(breaks) <= set(last_rows[:-1])
+    page_starts = [5] + [b + 1 for b in breaks]
+    page_ends = [b for b in breaks] + [last_rows[-1]]
+    for start, end in zip(page_starts, page_ends):
+        height = sum(ws.row_dimensions[r].height for r in range(start, end + 1))
+        assert height <= usable_page_height()
+
+
+def test_source_line_names_no_internals(workbook):
+    assert workbook["Briefing"]["B4"].value == (
+        "Source: Eurostat. Built from the project's dbt marts, generated 02 Apr 2026."
+    )
+
+
+def test_notes_sheet(workbook):
+    ws = workbook["Notes"]
+    assert ws.sheet_state == "visible"
+    text = " ".join(str(c.value) for row in ws.iter_rows() for c in row if c.value)
+    for phrase in ("Eurostat", "CC BY 4.0", "percentage points", "index", "schedule",
+                   "euro area", "dropdown", "python -m src.report.build_workbook"):
+        assert phrase in text
+    assert not any(str(c.value).startswith("=") for row in ws.iter_rows() for c in row if c.value)
+    assert ws.column_dimensions["B"].width >= 60
+    for row in ws.iter_rows(min_col=2, max_col=2):
+        cell = row[0]
+        if cell.value and len(cell.value) > 100:
+            assert cell.alignment.wrap_text
+            assert ws.row_dimensions[cell.row].height > 15
 
 
 def test_rejects_wildcard_characters_in_keys(frame):
