@@ -188,6 +188,27 @@ def test_markers_are_never_zero(kreise_parsed):
     assert kreise_parsed.loc[kreise_parsed["status"].isna(), "value"].notna().all()
 
 
+def test_labels_are_the_published_ones(tidy):
+    series = pd.concat(tidy.values()).drop_duplicates("indicator_code").set_index("indicator_code")
+    assert series["series_label"].notna().all() and series["breakdown_label"].notna().all()
+    # The two rates differ only in their denominator, and the published labels say so.
+    assert series.loc["ERWP09", "series_label"] == "Arbeitslosenquote bez. abh. zivile Erwerbspers."
+    assert series.loc["ERWP10", "series_label"] == "Arbeitslosenquote bez. auf alle zivile Erwerbsp."
+    assert series.loc["ERWP10.ARBEITSQUO05", "breakdown_label"] == "Männer"
+    assert series.loc["ERWP06.ARBEITSLOS05", "series_label"] == "Arbeitslose"
+    no_breakdown = series[series["breakdown_code"].isna()]
+    assert sorted(no_breakdown.index) == ["ERWP06", "ERWP09", "ERWP10"]
+    assert (no_breakdown["breakdown_label"] == rs.TOTAL_BREAKDOWN_LABEL).all()
+
+
+@pytest.mark.parametrize("column", ["series_label", "breakdown_label"])
+def test_schema_rejects_missing_label(tidy, column):
+    broken = tidy["DLAND"].copy()
+    broken.loc[broken.index[0], column] = None
+    with pytest.raises(pandera.errors.SchemaError):
+        RegionalObservationSchema.validate(broken)
+
+
 def test_series_key_includes_breakdown(tidy):
     kreise = tidy["KREISE"]
     erwp06 = kreise.loc[kreise.value_variable_code == "ERWP06", "indicator_code"]

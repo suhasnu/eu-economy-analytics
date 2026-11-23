@@ -1,0 +1,116 @@
+version: 2
+models:
+  - name: dim_region
+    description: >
+      One row per published Regionalstatistik code across the national, Land and district
+      levels, including district codes that are "-" in every loaded year (their fact rows
+      still point here).
+    columns:
+      - name: region_key
+        data_tests: [unique, not_null]
+      - name: region_code
+        description: DG, a 2-digit Land key or a 5-digit district key. Leading zeros kept.
+        data_tests: [unique, not_null]
+      - name: region_level
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [national, land, kreis]
+      - name: land_code
+        description: The Land a Land or district row belongs to; null for Germany.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_code
+      - name: region_name
+        description: Name as published. Several districts share a name with a predecessor code.
+        data_tests: [not_null]
+      - name: display_name
+        description: >
+          region_name, with the validity years appended where another code has the same name,
+          e.g. "Göttingen, Landkreis (2015)" and "Göttingen, Landkreis (2016–2025)".
+        data_tests: [unique, not_null]
+      - name: valid_from_year
+        description: First loaded year in which the code carries a value. Null if it never does.
+      - name: valid_to_year
+        description: Last loaded year in which the code carries a value. Null if it never does.
+
+  - name: dim_regional_series
+    description: One row per Regionalstatistik series, value variable plus optional breakdown.
+    columns:
+      - name: series_key
+        data_tests: [unique, not_null]
+      - name: series_code
+        data_tests: [unique, not_null]
+      - name: series_label
+        description: value_variable_label as published, e.g. "Arbeitslosenquote bez. abh. zivile Erwerbspers.".
+        data_tests: [not_null]
+      - name: breakdown_label
+        description: 2_variable_attribute_label as published; "insgesamt" for series without a breakdown.
+        data_tests: [not_null]
+      - name: display_label
+        description: >
+          English label for slicers and legends, from code_short_labels. The two rates are told
+          apart by their denominator: "(% of dependent civilian labour force)" (ERWP09) and
+          "(% of all civilian labour force)" (ERWP10).
+        data_tests: [unique, not_null]
+      - name: unit_code
+        data_tests: [not_null]
+      - name: aggregation
+        description: >
+          none for every series. Each level is published and rounded on its own, so districts
+          never sum to the published Land or national row.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [none]
+      - name: aggregation_short
+        data_tests: [not_null]
+      - name: aggregation_description
+        data_tests: [not_null]
+
+  - name: fct_regional_observation
+    description: >
+      One row per series, region and year. Land and national rows are the published rows,
+      never sums of districts; Prozent rows are the published rates.
+    columns:
+      - name: series_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_regional_series')
+                field: series_key
+      - name: region_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_key
+      - name: date_key
+        description: 1 January of the observation year, YYYY0101.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: status
+        description: >
+          "-" code does not exist that year, "." unknown or withheld, "x" blocked as not
+          meaningful. Null when a value is published. Never read as zero.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["-", ".", "x"]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series_key, region_key, date_key]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(value is null) = (status is not null)"

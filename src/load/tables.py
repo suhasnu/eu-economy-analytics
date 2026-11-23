@@ -8,13 +8,16 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from src.ingest.eurostat import load_indicators
+from src.ingest.regionalstatistik import DEFAULT_TABLE as REGIONAL_TABLE
 
 PROCESSED_DIR = Path("data/processed")
 
 
 def raw_tables(processed_dir: Path = PROCESSED_DIR) -> dict[str, Path]:
-    """raw_<name> -> parquet path, for every configured indicator."""
-    return {f"raw_{name}": processed_dir / f"{e['code']}.parquet" for name, e in load_indicators().items()}
+    """raw_<name> -> parquet path, for every configured Eurostat indicator plus the Regionalstatistik table."""
+    tables = {f"raw_{name}": processed_dir / f"{e['code']}.parquet" for name, e in load_indicators().items()}
+    tables["raw_regionalstatistik"] = processed_dir / f"{REGIONAL_TABLE}.parquet"
+    return tables
 
 
 def column_types(parquet: Path) -> list[tuple[str, str]]:

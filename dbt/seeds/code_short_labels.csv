@@ -39,3 +39,16 @@ unit,PC_ACT,% labour force
 unit,PCH_PRE,% m/m
 unit,PCH_SM,% y/y
 unit,RCH_A,% y/y
+regional_value_variable,ERWP06,Unemployed
+regional_value_variable,ERWP09,Unemployment rate (% of dependent civilian labour force)
+regional_value_variable,ERWP10,Unemployment rate (% of all civilian labour force)
+regional_breakdown,ARBEITSLOS05,Long-term unemployed
+regional_breakdown,ARBEITSLOS06,Severely disabled
+regional_breakdown,ARBEITSLOS08,Foreign nationals
+regional_breakdown,ARBEITSLOS12,Aged 15-19
+regional_breakdown,ARBEITSLOS13,Aged 15-24
+regional_breakdown,ARBEITSLOS14,Aged 55-64
+regional_breakdown,ARBEITSQUO05,Men
+regional_breakdown,ARBEITSQUO06,Women
+regional_breakdown,ARBEITSQUO07,Foreign nationals
+regional_breakdown,ARBEITSQUO09,Aged 15-24

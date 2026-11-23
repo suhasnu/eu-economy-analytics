@@ -3,7 +3,8 @@ models:
   - name: dim_date
     description: >
       One row per day, contiguous from 1 January of the earliest observation year
-      to 31 December of the latest, so Power BI can mark it as a date table.
+      to 31 December of the latest across Eurostat and Regionalstatistik, so Power BI
+      can mark it as a date table.
     columns:
       - name: date_key
         description: YYYYMMDD as an integer.

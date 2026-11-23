@@ -9,3 +9,11 @@ sources:
       - name: raw_industrial_production
       - name: raw_retail_trade
       - name: raw_consumer_confidence
+
+  - name: regionalstatistik_raw
+    description: >
+      data/processed/13211-02-05-4-B.parquet, loaded by src/load/bigquery.py (or src/load/duckdb_local.py offline).
+      Each region level comes from its own published request; 8-digit KREISE rows are dropped at ingestion.
+    schema: "{{ env_var('BQ_RAW_DATASET', 'raw') }}"
+    tables:
+      - name: raw_regionalstatistik

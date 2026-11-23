@@ -22,3 +22,29 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [dataset_name, unit_code, adjustment_code, breakdown_code, geo_code, period_date]
+
+  - name: stg_regionalstatistik__observations
+    description: >
+      Regionalstatistik table 13211-02-05-4-B, one row per region level, region, series and year,
+      as published at each level.
+    columns:
+      - name: region_level
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [national, land, kreis]
+      - name: region_code
+        description: DG, a 2-digit Land key or a 5-digit district key. Leading zeros kept.
+        data_tests: [not_null]
+      - name: year
+        data_tests: [not_null]
+      - name: series_code
+        description: value_variable_code, joined with the breakdown code when there is one (ERWP06.ARBEITSLOS05).
+        data_tests: [not_null]
+      - name: status
+        description: "- code does not exist that year, . unknown or withheld, x blocked as not meaningful. Null when a value is published."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [region_level, region_code, series_code, year]

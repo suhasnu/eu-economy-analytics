@@ -30,6 +30,7 @@ CODE_PATTERNS = {"DINSG": r"DG", "DLAND": r"\d{2}", "KREISE": r"\d{5}|\d{8}"}
 # KREISE also returns three cities (Hannover, Aachen, Saarbrücken) and the twelve Berlin boroughs as 8-digit
 # rows. Each lies inside a 5-digit district row of the same response, so keeping them double counts.
 CONTAINED_CODE_LENGTH = 8
+TOTAL_BREAKDOWN_LABEL = "insgesamt"
 
 CODE, LABEL = "1_variable_attribute_code", "1_variable_attribute_label"
 OUTPUT_COLUMNS = list(RegionalObservationSchema.columns)
@@ -153,6 +154,10 @@ def parse_ffcsv(zip_bytes: bytes, level: str, table: str = DEFAULT_TABLE) -> pd.
 
     value, status = _parse_values(raw["value"])
     breakdown = raw["2_variable_attribute_code"].mask(raw["2_variable_attribute_code"] == "")
+    # Series without a breakdown publish an empty label; name them as the total. A breakdown code with an
+    # empty label stays null so the schema rejects it.
+    breakdown_label = raw["2_variable_attribute_label"].mask(raw["2_variable_attribute_label"] == "")
+    breakdown_label = breakdown_label.where(breakdown.notna(), TOTAL_BREAKDOWN_LABEL)
     df = pd.DataFrame(
         {
             "indicator_code": raw["value_variable_code"].where(
@@ -166,8 +171,9 @@ def parse_ffcsv(zip_bytes: bytes, level: str, table: str = DEFAULT_TABLE) -> pd.
             "geo_label": raw[LABEL],
             "region_level": LEVELS[level],
             "value_variable_code": raw["value_variable_code"],
+            "series_label": raw["value_variable_label"].mask(raw["value_variable_label"] == ""),
             "breakdown_code": breakdown,
-            "breakdown_label": raw["2_variable_attribute_label"].mask(raw["2_variable_attribute_label"] == ""),
+            "breakdown_label": breakdown_label,
             "table_code": table,
         }
     )

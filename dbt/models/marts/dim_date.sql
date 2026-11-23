@@ -1,8 +1,20 @@
 {# Contiguous daily spine over whole calendar years, as Power BI needs to mark it as a date table. #}
-{% set bounds %}select min(period_date) as lo, max(period_date) as hi from {{ ref('stg_eurostat__observations') }}{% endset %}
+{# Years across both sources: Eurostat months and Regionalstatistik years. #}
+{% set bounds %}
+select min(lo) as lo_year, max(hi) as hi_year
+from (
+    select
+        cast(min(extract(year from period_date)) as integer) as lo,
+        cast(max(extract(year from period_date)) as integer) as hi
+    from {{ ref('stg_eurostat__observations') }}
+    union all
+    select min(year) as lo, max(year) as hi
+    from {{ ref('stg_regionalstatistik__observations') }}
+) as years
+{% endset %}
 {% if execute %}
     {% set row = run_query(bounds).rows[0] %}
-    {% set lo_year, hi_year = row[0].year, row[1].year %}
+    {% set lo_year, hi_year = row[0] | int, row[1] | int %}
 {% else %}
     {% set lo_year, hi_year = 1900, 1900 %}
 {% endif %}

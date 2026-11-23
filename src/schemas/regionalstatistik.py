@@ -34,8 +34,11 @@ RegionalObservationSchema = pa.DataFrameSchema(
         # From the request that produced the row; the geo shape must agree with it.
         "region_level": pa.Column(str, pa.Check.isin(REGION_LEVELS), nullable=False),
         "value_variable_code": pa.Column(str, nullable=False),
+        # value_variable_label as published, e.g. "Arbeitslosenquote bez. abh. zivile Erwerbspers.".
+        "series_label": pa.Column(str, nullable=False),
         "breakdown_code": pa.Column(str, nullable=True),
-        "breakdown_label": pa.Column(str, nullable=True),
+        # 2_variable_attribute_label as published; "insgesamt" for series without a breakdown.
+        "breakdown_label": pa.Column(str, nullable=False),
         "table_code": pa.Column(str, nullable=False),
     },
     checks=[
