@@ -189,6 +189,16 @@ cultureInfo de-DE
 			            },
 			            "Weight": 0.9
 			          }
+			        },
+			        {
+			          "vs a year earlier": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -275,6 +285,48 @@ cultureInfo de-DE
 			      "Terms": [
 			        {
 			          "Kind": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_change": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest Change"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Change vs a year earlier": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_geo.geo_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_geo",
+			          "ConceptualProperty": "geo_name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Geography": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
