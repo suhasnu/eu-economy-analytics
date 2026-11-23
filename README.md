@@ -1,19 +1,22 @@
 # EU Economy Analytics
 
-Five monthly Eurostat indicators for Germany and five European comparators, from the
-Eurostat API through BigQuery to a Power BI report and an Excel briefing.
+Five monthly Eurostat indicators for Germany and five European comparators, plus German
+regional unemployment from Destatis, through BigQuery to a Power BI report and an Excel
+briefing.
 
 ![Overview page](docs/overview.png)
 
 ![Indicator detail page](docs/indicator-detail.png)
 
+![Inside Germany page](docs/inside-germany.png)
+
 ## Pipeline
 
 ```
-Eurostat API (JSON-stat)
+Eurostat API (JSON-stat)          Destatis Regionalstatistik (ffcsv)
   -> Python ingestion, Pandera validation, pytest
   -> BigQuery
-  -> dbt star schema
+  -> dbt star schemas, one monthly and one annual regional
   -> Power BI (.pbip, TMDL model + PBIR report)
   -> Excel briefing (openpyxl, live formulas)
 ```
@@ -70,10 +73,16 @@ application default credentials.
 - Euro area is EA21, back-calculated at fixed composition, so the series is continuous.
 - Indicators publish on different schedules, so each card carries its own month.
 
-## Not done yet
+## Regional data
 
-Three report pages; a country comparison page is outstanding. Destatis regional data is
-not wired in.
+Annual registered unemployment for Germany, the 16 Länder and 400 districts, 2015 to 2025,
+from Destatis Regionalstatistik table 13211-02-05-4-B. Every level is fetched as published;
+nothing is summed or averaged from a lower one. Summing districts gives 2,787,125 for 2024
+against a published national figure of 2,787,112, and a test records that difference rather
+than hiding it.
+
+Source: Statistisches Bundesamt (Destatis), Regionalstatistik; Datenlizenz by-2-0, eigene
+Berechnung.
 
 ## District map
 
