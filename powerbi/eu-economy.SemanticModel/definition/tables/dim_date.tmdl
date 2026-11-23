@@ -30,7 +30,7 @@ table dim_date
 		dataType: int64
 		formatString: 0
 		lineageTag: 9d7e7cb5-bde5-4b34-bdda-b84c4a0e3acd
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: year
 
 		annotation SummarizationSetBy = Automatic
@@ -39,7 +39,7 @@ table dim_date
 		dataType: int64
 		formatString: 0
 		lineageTag: 83b2cbe3-bbcf-42a8-a315-1fc010a86bc3
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: quarter
 
 		annotation SummarizationSetBy = Automatic
@@ -48,7 +48,7 @@ table dim_date
 		dataType: int64
 		formatString: 0
 		lineageTag: 02e2e4d8-bee6-42a0-b8a1-b67e5e3e8829
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: month_number
 
 		annotation SummarizationSetBy = Automatic

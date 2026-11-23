@@ -8,7 +8,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["dim_date","dim_geo","dim_series","fct_observation"]
+annotation PBI_QueryOrder = ["dim_date","dim_geo","dim_series","fct_observation","dim_regional_series","dim_region","fct_regional_observation"]
 
 annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
 
@@ -18,6 +18,9 @@ ref table dim_series
 ref table fct_observation
 ref table _Measures
 ref table Parameter
+ref table dim_regional_series
+ref table dim_region
+ref table fct_regional_observation
 
 ref cultureInfo de-DE
 

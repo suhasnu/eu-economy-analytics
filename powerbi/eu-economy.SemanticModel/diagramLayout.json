@@ -4,7 +4,7 @@
     {
       "ordinal": 0,
       "scrollPosition": {
-        "x": 0,
+        "x": 803.16458283544762,
         "y": 0
       },
       "nodes": [
@@ -82,6 +82,45 @@
           "nodeLineageTag": "592d87e1-8d6a-4fde-8c9d-0091e525a948",
           "size": {
             "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1538.4951931014023,
+            "y": 537.2381948569988
+          },
+          "nodeIndex": "dim_region",
+          "nodeLineageTag": "c600645c-172f-4448-a775-a8dfddb00294",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1808.1254158957179,
+            "y": 285.9695235778284
+          },
+          "nodeIndex": "dim_regional_series",
+          "nodeLineageTag": "679604fb-84c8-440e-9af5-14d70fbf5219",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1283.4447491217838,
+            "y": 308.23841282427577
+          },
+          "nodeIndex": "fct_regional_observation",
+          "nodeLineageTag": "e750745a-ae78-49e4-b9b1-ed3ca9202d75",
+          "size": {
+            "height": 200,
             "width": 234
           },
           "zIndex": 0

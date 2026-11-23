@@ -10,3 +10,15 @@ relationship AutoDetected_e98c0ede-bd19-44a7-aa59-85802b6020f4
 	fromColumn: fct_observation.series_key
 	toColumn: dim_series.series_key
 
+relationship AutoDetected_4319ed38-84d1-4dd1-b7bc-edc711f5e0a4
+	fromColumn: fct_regional_observation.date_key
+	toColumn: dim_date.date_key
+
+relationship AutoDetected_6b333000-4d12-42ab-bc00-3bd2fc70ccc1
+	fromColumn: fct_regional_observation.region_key
+	toColumn: dim_region.region_key
+
+relationship 2708ce0f-5f37-d807-17d1-be91c19c8887
+	fromColumn: fct_regional_observation.series_key
+	toColumn: dim_regional_series.series_key
+

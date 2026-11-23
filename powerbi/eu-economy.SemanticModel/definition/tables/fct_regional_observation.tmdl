@@ -1,0 +1,57 @@
+table fct_regional_observation
+	lineageTag: e750745a-ae78-49e4-b9b1-ed3ca9202d75
+
+	column series_key
+		dataType: string
+		lineageTag: cd2e3c1b-ba5d-4942-8dc7-f166e4b954b0
+		summarizeBy: none
+		sourceColumn: series_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column region_key
+		dataType: string
+		lineageTag: 81e0f104-cfad-4f68-ae85-42b574330c01
+		summarizeBy: none
+		sourceColumn: region_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 124dd447-daa9-46b6-88dc-3547eaabec74
+		summarizeBy: none
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: double
+		lineageTag: 6e65f88e-55e1-44d9-aecb-d3d7ccee20ba
+		summarizeBy: sum
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column status
+		dataType: string
+		lineageTag: c3128e80-bcd4-4d83-a28b-ca18cadcf123
+		summarizeBy: none
+		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_regional_observation = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    fct_regional_observation_Table = eu_economy_analytics_marts_Schema{[Name="fct_regional_observation",Kind="Table"]}[Data]
+				in
+				    fct_regional_observation_Table
+

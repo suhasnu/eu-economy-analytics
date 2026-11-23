@@ -68,6 +68,11 @@
           "name": "EU_Economy3247425736405398.json",
           "path": "EU_Economy3247425736405398.json",
           "type": "CustomTheme"
+        },
+        {
+          "name": "vg2500_kreise06083293268093659.topojson",
+          "path": "vg2500_kreise06083293268093659.topojson",
+          "type": "ShapeMap"
         }
       ]
     }

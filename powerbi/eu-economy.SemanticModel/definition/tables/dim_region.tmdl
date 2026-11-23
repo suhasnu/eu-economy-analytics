@@ -1,0 +1,80 @@
+table dim_region
+	lineageTag: c600645c-172f-4448-a775-a8dfddb00294
+
+	column region_key
+		dataType: string
+		lineageTag: 2496adb3-9f37-428c-ba1c-0eac64fee90f
+		summarizeBy: none
+		sourceColumn: region_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column region_code
+		dataType: string
+		lineageTag: 11c4371f-3424-4905-9eff-9c6f39f81c84
+		summarizeBy: none
+		sourceColumn: region_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column region_level
+		dataType: string
+		lineageTag: 52438ec4-afd6-419e-836e-c68a69772a34
+		summarizeBy: none
+		sourceColumn: region_level
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_code
+		dataType: string
+		lineageTag: 8ceb8952-f4d2-4951-b538-7b1e46ebc7cf
+		summarizeBy: none
+		sourceColumn: land_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column region_name
+		dataType: string
+		lineageTag: 4fcbf279-4287-499a-ba2a-38cae523cb61
+		summarizeBy: none
+		sourceColumn: region_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_name
+		dataType: string
+		lineageTag: af4099f4-2ef6-4b55-b13e-3920ca676375
+		summarizeBy: none
+		sourceColumn: display_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column valid_from_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 189be55c-889e-4563-ad80-9bac6df862d2
+		summarizeBy: none
+		sourceColumn: valid_from_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column valid_to_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 5bfc646e-067f-43e7-a6fe-089d190d0d26
+		summarizeBy: none
+		sourceColumn: valid_to_year
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_region = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    dim_region_Table = eu_economy_analytics_marts_Schema{[Name="dim_region",Kind="Table"]}[Data]
+				in
+				    dim_region_Table
+

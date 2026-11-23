@@ -1,0 +1,110 @@
+table dim_regional_series
+	lineageTag: 679604fb-84c8-440e-9af5-14d70fbf5219
+
+	column series_key
+		dataType: string
+		lineageTag: 710f2497-3643-49ea-88fb-c04ed337d84e
+		summarizeBy: none
+		sourceColumn: series_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column series_code
+		dataType: string
+		lineageTag: ff2bbd0f-d9df-4559-b8d7-3ddf9b56af24
+		summarizeBy: none
+		sourceColumn: series_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column value_variable_code
+		dataType: string
+		lineageTag: 3ad98968-9340-4d05-989d-01dda8a0ddfd
+		summarizeBy: none
+		sourceColumn: value_variable_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column series_label
+		dataType: string
+		lineageTag: f14a72a5-3df7-4829-86dc-b6f9d2eebc8c
+		summarizeBy: none
+		sourceColumn: series_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column breakdown_code
+		dataType: string
+		lineageTag: 00a27763-1fc3-4271-805f-f99467474fa8
+		summarizeBy: none
+		sourceColumn: breakdown_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column breakdown_label
+		dataType: string
+		lineageTag: 0593e62d-0bae-43ea-82cf-e78c713e8f7a
+		summarizeBy: none
+		sourceColumn: breakdown_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_label
+		dataType: string
+		lineageTag: 54a6a07f-de3b-40ce-b483-05495f719704
+		summarizeBy: none
+		sourceColumn: display_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_code
+		dataType: string
+		lineageTag: 220aff7c-5656-4f8a-a2da-fd2d926a9791
+		summarizeBy: none
+		sourceColumn: unit_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_kind
+		dataType: string
+		lineageTag: 2d95d50b-648a-4970-91b3-68b76fe95491
+		summarizeBy: none
+		sourceColumn: unit_kind
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation
+		dataType: string
+		lineageTag: 17e00fdd-385f-4741-a9de-2fe3010b38ba
+		summarizeBy: none
+		sourceColumn: aggregation
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation_short
+		dataType: string
+		lineageTag: 54c3881e-a6ee-4f00-8079-26160916b100
+		summarizeBy: none
+		sourceColumn: aggregation_short
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation_description
+		dataType: string
+		lineageTag: 5e81be80-111e-47e6-b58d-c307d9828465
+		summarizeBy: none
+		sourceColumn: aggregation_description
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_regional_series = m
+		mode: import
+		source =
+				let
+				    Source = GoogleBigQuery.Database(),
+				    #"entsoe-data-platform" = Source{[Name="entsoe-data-platform"]}[Data],
+				    eu_economy_analytics_marts_Schema = #"entsoe-data-platform"{[Name="eu_economy_analytics_marts",Kind="Schema"]}[Data],
+				    dim_regional_series_Table = eu_economy_analytics_marts_Schema{[Name="dim_regional_series",Kind="Table"]}[Data]
+				in
+				    dim_regional_series_Table
+

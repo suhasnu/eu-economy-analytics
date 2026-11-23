@@ -1,0 +1,48 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "titleBox5",
+  "position": {
+    "x": 16,
+    "y": 16,
+    "z": 0,
+    "width": 580,
+    "height": 82,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Inside Germany",
+                    "textStyle": {
+                      "fontSize": "20pt",
+                      "color": "#0072B2",
+                      "fontWeight": "bold"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Registered unemployment by district · Destatis Regionalstatistik, dl-de/by-2-0 · Boundaries © BKG (2026) dl-de/by-2-0 (Daten verändert)",
+                    "textStyle": {
+                      "fontSize": "9pt",
+                      "color": "#6B7785"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

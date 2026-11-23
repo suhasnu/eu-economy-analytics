@@ -95,6 +95,95 @@ table _Measures
 			    )
 		lineageTag: b8adc8a8-d105-4659-996f-01bc1a83714a
 
+	/// Regional observation value when exactly one fact row is in scope, otherwise blank.
+	measure 'Regional Value' =
+			IF (
+			    COUNTROWS ( fct_regional_observation ) = 1,
+			    SELECTEDVALUE ( fct_regional_observation[value] )
+			)
+		lineageTag: 68cf91b9-ca4f-4698-858d-d6fce7d761cb
+
+		formatStringDefinition =
+				SWITCH (
+				    SELECTEDVALUE ( dim_regional_series[unit_code] ),
+				    "Anzahl", "#,##0",
+				    "Prozent", "0.0",
+				    "#,0.0"
+				)
+
+	/// Most recent year holding a regional value in any region, ignoring date and region filters, so a visual shows one year.
+	measure 'Regional Latest Year' =
+			CALCULATE (
+			    MAXX (
+			        FILTER ( fct_regional_observation, NOT ISBLANK ( fct_regional_observation[value] ) ),
+			        RELATED ( dim_date[year] )
+			    ),
+			    REMOVEFILTERS ( dim_date ),
+			    REMOVEFILTERS ( dim_region )
+			)
+		formatString: 0
+		lineageTag: 6dfe2d60-8fce-4fd3-aeae-0f43ad9ddfa2
+
+	/// Regional value at the latest year that has data.
+	measure 'Regional Latest Value' =
+			VAR LatestYear = [Regional Latest Year]
+			RETURN
+			    CALCULATE ( [Regional Value], REMOVEFILTERS ( dim_date ), dim_date[year] = LatestYear )
+		lineageTag: dd1d39f4-4017-4799-9801-a28cb3b09f3b
+
+		formatStringDefinition =
+				SWITCH (
+				    SELECTEDVALUE ( dim_regional_series[unit_code] ),
+				    "Anzahl", "#,##0",
+				    "Prozent", "0.0",
+				    "#,0.0"
+				)
+
+	/// Change on the previous year: points for Prozent series, percent for Anzahl series (blank if the earlier count is zero).
+	measure 'Regional Change vs PY' =
+			VAR SelectedYear = SELECTEDVALUE ( dim_date[year] )
+			VAR ValueNow = [Regional Value]
+			VAR ValuePY =
+			    CALCULATE ( [Regional Value], REMOVEFILTERS ( dim_date ), dim_date[year] = SelectedYear - 1 )
+			VAR Unit = SELECTEDVALUE ( dim_regional_series[unit_code] )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( SelectedYear ) && NOT ISBLANK ( ValueNow ) && NOT ISBLANK ( ValuePY ),
+			        SWITCH (
+			            Unit,
+			            "Prozent", ValueNow - ValuePY,
+			            "Anzahl", DIVIDE ( ValueNow - ValuePY, ValuePY ) * 100
+			        )
+			    )
+		lineageTag: 649c9963-f265-4f5d-99bf-cb5e8bd32bca
+
+	/// Signed regional change with its unit only, for example +0.4 pp or -2.1%.
+	measure 'Regional Change Label' =
+			VAR Chg = [Regional Change vs PY]
+			VAR IsCount = SELECTEDVALUE ( dim_regional_series[unit_code] ) = "Anzahl"
+			RETURN
+			    IF (
+			        NOT ISBLANK ( Chg ),
+			        FORMAT ( Chg, "+0.0;-0.0;0.0", "en-US" )
+			            & IF ( IsCount, "%", " pp" )
+			    )
+		lineageTag: 5fe3e0e3-1d3a-456d-9b74-4b284c2bb897
+
+	/// Why a regional value is missing, for the map tooltip. Blank when there is a value or several markers.
+	measure 'Regional Status Note' =
+			VAR Marker = SELECTEDVALUE ( fct_regional_observation[status] )
+			RETURN
+			    IF (
+			        ISBLANK ( [Regional Value] ) && NOT ISBLANK ( Marker ),
+			        SWITCH (
+			            Marker,
+			            "-", "District did not exist that year",
+			            ".", "Value withheld or unknown",
+			            "x", "Not shown: the figure would not be meaningful"
+			        )
+			    )
+		lineageTag: 73fcfee0-29f5-4aed-8c67-5a06d262f04f
+
 	column _
 		isHidden
 		lineageTag: abba6b1d-b759-4223-bff1-d89abe307e8e
