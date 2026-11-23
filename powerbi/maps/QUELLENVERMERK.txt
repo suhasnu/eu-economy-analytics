@@ -1,0 +1,9 @@
+© BKG (2026) dl-de/by-2-0 (Daten verändert), Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf
+
+BKG: https://www.bkg.bund.de
+dl-de/by-2-0: https://www.govdata.de/dl-de/by-2-0
+
+vg2500_kreise.topojson is derived from Verwaltungsgebiete 1 : 2 500 000 (VG2500), Stand 31.12.2025,
+Bundesamt für Kartographie und Geodäsie, under Datenlizenz Deutschland Namensnennung 2.0.
+Changes: Kreise layer (GF = 9) only, reprojected from ETRS89 / UTM32 to WGS84, simplified with a
+200 m tolerance, attributes reduced to AGS and name. build_vg2500_kreise.sh regenerates it.

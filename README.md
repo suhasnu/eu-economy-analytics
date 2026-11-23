@@ -74,3 +74,14 @@ application default credentials.
 
 Three report pages; a country comparison page is outstanding. Destatis regional data is
 not wired in.
+
+## District map
+
+`powerbi/maps/vg2500_kreise.topojson` holds the 400 German districts (Kreise) for Power BI's
+Shape Map, keyed on the 5-digit AGS as both feature id and `ags` property. It is converted
+from BKG's VG2500, Stand 31.12.2025, by `powerbi/maps/build_vg2500_kreise.sh`; the download
+itself is not in the repo.
+
+© BKG (2026) dl-de/by-2-0 (Daten verändert), Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf
+
+[BKG](https://www.bkg.bund.de), [dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0)
